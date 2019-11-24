@@ -38,6 +38,9 @@ function importwrapper() {
 	else if (document.getElementById("mboxgroup").selectedIndex === 3) {
 		window.arguments[0].scandir = true;
 		window.arguments[0].recursiveMode = true;
+
+		// cleidigh why do we need to have this? maybe this should not be here
+		// window.arguments[0].keepstructure = true;
 	}
 }
 

@@ -213,6 +213,9 @@ function openMboxDialog() {
 	}
 	var params = { scandir: false, keepstructure: false, openProfDir: false, recursiveMode: false };
 	window.openDialog("chrome://mboximport/content/mboxdialog.xul", "", "chrome,modal,centerscreen", params);
+	console.debug('AfterBoxDialogue');
+	console.debug(params);
+	console.debug('StartingImport');
 	setTimeout(importmbox, 800, params.scandir, params.keepstructure, params.openProfDir, params.recursiveMode, msgFolder);
 }
 
@@ -333,9 +336,12 @@ function trytocopyMAILDIR() {
 // msgFolder = the folder as nsImsgFolder
 
 function trytocopy(file, filename, msgFolder, keepstructure) {
+	console.debug('TryTo ' + filename + '  ' + msgFolder.name + '  ks ' + keepstructure);
 	// If the file isn't mbox format, alert, but doesn't exit (it did in pre 0.5.8 version and lower)
 	// In fact sometimes TB can import also corrupted mbox files
 	var isMbx = isMbox(file);
+	console.debug('isMbox ' + isMbx);
+
 	if (isMbx !== 1) {
 		if (isMbx === 0) {
 			var continuebundle = MBstrBundleService.createBundle("chrome://messenger/locale/filter.properties");
@@ -358,9 +364,12 @@ function trytocopy(file, filename, msgFolder, keepstructure) {
 	var clonex = filex.clone();
 	var newfilename = filename;
 	var restoreChar = false;
+	console.debug('after2local ' + filename);
+
 	if (newfilename.match(/#/)) {
 		var safeChar = Math.floor(Math.random() * 99999).toString();
 		newfilename = newfilename.replace(/#/g, safeChar);
+		console.debug('in match ' + newfilename);
 		restoreChar = true;
 	}
 	clonex.append(newfilename);
@@ -395,24 +404,33 @@ function trytocopy(file, filename, msgFolder, keepstructure) {
 
 	// let msgWindow = Cc["@mozilla.org/messenger/msgwindow;1"].createInstance(Ci.nsIMsgWindow);
 
-	console.debug('add some folder ' + newfilename);
-	var tempfolder = msgFolder.addSubfolder(newfilename);
-	// msgFolder.createSubfolder(newfilename, msgWindow);
+	console.debug('add  subfolder in : ' + msgFolder.name + '  ' + newfilename);
+	// var tempfolder = msgFolder.addSubfolder(newfilename);
 
-	// var tempfolder = msgFolder.getChildNamed(newfilename);
-	// tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
+	msgFolder.createSubfolder(newfilename, msgWindow);
+
+	var tempfolder = msgFolder.getChildNamed(newfilename);
+	tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
 
 	if (restoreChar) {
 		var reg = new RegExp(safeChar, "g");
 		tempfolder.name = newfilename.replace(reg, "#");
 	}
 	// 2. find the nsIFile of the directory where the file will be copied
+	var tempfolderNS;
 	if (!msgFolder.isServer) {
-		var tempfolderNS = msgFolder2LocalFile(tempfolder);
+		tempfolderNS = msgFolder2LocalFile(tempfolder);
 		filex = tempfolderNS.parent;
 	}
 	// 3. delete the new subfolder, to delete all the files inside "msgfoldername.sbd" directory
+
+	console.debug('Delete TempFolder ' + tempfolder.filePath.path);
 	tempfolder.Delete();
+	// filespec.initWithPath(tempfolder.filePath.pasth);
+	// filespec.append(folderName);
+	// tempfolderNS.remove(true);
+
+	console.debug('AfterDelete');
 
 	if (!filex) {
 		alert(mboximportbundle.GetStringFromName("internalerror"));
@@ -422,22 +440,33 @@ function trytocopy(file, filename, msgFolder, keepstructure) {
 		// Finally copy the mbox file in the "msgfoldername.sbd" directory
 		// file.copyTo(filex, newfilename);
 		// cleidigh - have to use leafname for truncated internal names
+
 		file.copyTo(filex, tempfolder.filePath.leafName);
+		// file.copyTo(filex, newfilename);
+		console.debug('CopyTo file: ' + file.path + ' ' + newfilename + '  ' + filex.path);
 
 		// If this is an export with structure, we try also to export the directory mbox-filename.sbd
+		console.debug('KeepStructure ' + keepstructure);
 		if (keepstructure) {
 			var sbd = file.parent;
+			console.debug('Parent ' + file.parent.path);
 			sbd.append(file.leafName + ".sbd");
-			if (sbd.exists())
+			if (sbd.exists()) {
+				console.debug('CopyTo file 2: ' + sbd.path + ' ' + newfilename + '.sbd  ' + filex.path);
 				sbd.copyTo(filex, newfilename + ".sbd");
+				// console.debug('DeleteCopy');
+				// filex.remove();
+			}
 		}
 	} catch (e) {
+		console.debug('TryCopy e: ' + e);
 		return false;
 	}
 	// inizialize as nsIFile the folder imported in TB and check if it's writable and readable.
 	// if not (for ex. a file imported from a cdrom), change the permissions
-	// filex.append(newfilename);
-	filex.append(tempfolder.filePath.leafName);
+	filex.append(newfilename);
+	// filex.append(tempfolder.filePath.leafName);
+	console.debug('after append ' + tempfolder.filePath.leafName);
 
 	if (!filex.isReadable() || !filex.isWritable())
 		filex.permissions = 420;
@@ -453,7 +482,12 @@ function trytocopy(file, filename, msgFolder, keepstructure) {
 	} catch (e) { }
 	try {
 		msgFolder.NotifyItemAdded(newFolder); // This is for TB > 1.0
-	} catch (e) { }
+		// SelectFolder(newFolder.URI);
+		// IETupdateFolder(newFolder);
+		console.debug('UpdateDatabase');
+	} catch (e) {
+		console.debug('Notify ' + e);
+	}
 
 	var forceCompact = addEmptyMessageToForceCompact(newFolder);
 	if (forceCompact && !gNeedCompact)
@@ -479,6 +513,7 @@ function storeImportedSubFolders(msgFolder) {
 	var next;
 	var obj = {};
 
+	console.debug('StoreSubfolders ' + msgFolder.name);
 	if (msgFolder.GetSubFolders) {
 		subfolders = msgFolder.GetSubFolders();
 		while (true) {
@@ -609,6 +644,7 @@ function importmbox(scandir, keepstructure, openProfDir, recursiveMode, msgFolde
 				var onefile = thefiles.getNext();
 				onefile = onefile.QueryInterface(Ci.nsIFile);
 				mboxname = onefile.leafName;
+				console.debug('Import box ' + mboxname + '  ks: ' + keepstructure);
 				trytocopy(onefile, mboxname, msgFolder, keepstructure);
 			}
 			if (buildMSF || gNeedCompact) {
@@ -619,6 +655,8 @@ function importmbox(scandir, keepstructure, openProfDir, recursiveMode, msgFolde
 			return;
 		}
 	} else {
+		console.debug(`ImportMB: ${msgFolder.name}  ${keepstructure}`);
+
 		// Open the filepicker to choose the directory
 		fp.init(window, mboximportbundle.GetStringFromName("searchdir"), nsIFilePicker.modeGetFolder);
 
@@ -649,11 +687,20 @@ function importmbox(scandir, keepstructure, openProfDir, recursiveMode, msgFolde
 
 			var importThis;
 
+			for (let i = 0; i < filesArray.length; i++) {
+				let afile = filesArray[i];
+				mboxname = afile.leafName;
+				let mboxpath = afile.path;
+				console.debug('File: ' + i + ' ' + mboxname + ' ' + mboxpath);
+			}
+
 			// scanning the directory to search files that could be mbox files
 			for (var i = 0; i < filesArray.length; i++) {
 				var afile = filesArray[i];
 				mboxname = afile.leafName;
 				var mboxpath = afile.path;
+				console.debug('Process MB File: ' + i + ' ' + mboxname + ' ' + mboxpath);
+
 				if (isMbox(afile) === 1) {
 					var ask = IETprefs.getBoolPref("extensions.importexporttoolsng.confirm.before_mbox_import");
 					if (ask) {
@@ -679,12 +726,16 @@ function importmbox(scandir, keepstructure, openProfDir, recursiveMode, msgFolde
 						importThis = true;
 					}
 					if (importThis && afile.isFile())
-						trytocopy(afile, mboxname, msgFolder);
+						// cleidigh missing keepstructure?
+						console.debug('CallingTryToCopy ' + mboxname + ' f: ' + msgFolder.name);
+					trytocopy(afile, mboxname, msgFolder, keepstructure);
 				}
 			}
-			if (buildMSF || gNeedCompact)
+
+			if (buildMSF || gNeedCompact) {
+				console.debug('CallBuildMSF');
 				setTimeout(buildMSGfile, 1000, true);
-			else
+			} else
 				IETwritestatus(mboximportbundle.GetStringFromName("endscan"));
 		}
 	}
