@@ -1073,10 +1073,10 @@ async function importALLasEML(recursive) {
 	gEMLimported = 0;
 	IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
 
-	// cleidigh
-	let folderArray = await enumerateImportFolders(fp.file);
-	console.debug('total folders ' + folderArray.length);
-	return;
+	// cleidigh - test
+	// let folderArray = await enumerateImportFolders(fp.file);
+	// console.debug('total folders ' + folderArray.length);
+	// return;
 
 
 	if (res === nsIFilePicker.returnOK) {
