@@ -1,0 +1,105 @@
+X-Account-Key: account1
+X-UIDL: UID2896-397685918
+X-Mozilla-Status: 0001
+X-Mozilla-Status2: 00000000
+X-Mozilla-Keys:                                                                                 
+Return-Path: <cleidigh@gmail.com>
+Delivered-To: Test1@kokkini.net
+Received: from ehub33.webhostinghub.com
+	by ehub33.webhostinghub.com with LMTP
+	id MJU0LkUb013b/QgAGV6vFQ
+	(envelope-from <cleidigh@gmail.com>)
+	for <Test1@kokkini.net>; Mon, 18 Nov 2019 17:29:25 -0500
+Return-path: <cleidigh@gmail.com>
+Envelope-to: Test1@kokkini.net
+Delivery-date: Mon, 18 Nov 2019 17:29:25 -0500
+Received: from mail-qk1-f169.google.com ([209.85.222.169]:43371)
+	by ehub33.webhostinghub.com with esmtps (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
+	(Exim 4.92)
+	(envelope-from <cleidigh@gmail.com>)
+	id 1iWpWN-002X6h-GM
+	for Test1@kokkini.net; Mon, 18 Nov 2019 17:29:25 -0500
+Received: by mail-qk1-f169.google.com with SMTP id z23so15988075qkj.10
+        for <Test1@kokkini.net>; Mon, 18 Nov 2019 14:29:23 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=to:from:subject:message-id:date:user-agent:mime-version
+         :content-transfer-encoding:content-language;
+        bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;
+        b=vKKoFZZe7jNULy4FfAHuj/w/eaVLet3WfFerRE+/eV2uPCn/Gghh08zCw9+IPa/9rp
+         XvxWYC2DJQMjqRJ9qc5oCnd1+cPaAG+nJczp5x/9LfKKjVUotJPfhVtarCe1xT8wzohV
+         4NxVg+fayxCcgSLKMquvTBvFGWjNVGvQmR+P7Ge4xq8splGQE9dMf0DF8JXVMoki6HHd
+         aAVXY0MTfisVq0j0XlpvQNhtdWtp82bnuPg4of9bJH/gT71RWa8E/V8hL952P04tWknk
+         cWJojwnz5ERssUWAc+pWmhwajO/T2tEZsQaAhy1MjYG/3IxvTbqRuv7VDg7XbsnBYvlg
+         HjUQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:to:from:subject:message-id:date:user-agent
+         :mime-version:content-transfer-encoding:content-language;
+        bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;
+        b=SUoKz918hOsCLLH01uF5zfNinFfVpHaKz5078RTiKVkxAC5qxL4+s7+WcgdnNH3iLD
+         2k9GsehnT1Sl5o30VrBnnvdD4tn6hUZC/3NYVSkFBWw5V0+WE5pDWCdV4y6rPrTCeFPQ
+         eLbzK0lFngbDkcW9dZ9lz9XSXH0pJk6JwkmICtVJa5ZVWKyzluffEqkt1mZXNv56OokM
+         n0L5nUaOraDtbLxJAJ2dM5fgOm5OjZWJlvhN4lGpMpwm7Jx1Dv65av7C7335Yp+Bo0ua
+         ZPfh9lloYNitXeAiOnN0tOuQD9JGaFJgeHAntb7btkghLYLBAJzeItHx6eYrzVgsrcCt
+         yRqQ==
+X-Gm-Message-State: APjAAAVC9IGwEjY64xJtY7TzUGXbbGxkVpU5BuyD8rlk8+MLVCKOGZHL
+	c9ulE4u9/iBD6cUEAPNt2TtE2YhZ
+X-Google-Smtp-Source: APXvYqwaDRCR+F/Z7CJJ4sElkS1PJxbzhIAuLdDuiYeulEe/8wBhs6DqrYKxjCjty/bmz23f6dPVcA==
+X-Received: by 2002:ae9:f217:: with SMTP id m23mr26553914qkg.151.1574116162753;
+        Mon, 18 Nov 2019 14:29:22 -0800 (PST)
+Received: from [192.168.1.211] (ip72-195-134-145.ri.ri.cox.net. [72.195.134.145])
+        by smtp.gmail.com with ESMTPSA id a70sm9133523qkb.86.2019.11.18.14.29.21
+        for <Test1@kokkini.net>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 18 Nov 2019 14:29:22 -0800 (PST)
+To: Test1@kokkini.net
+From: Christopher Leidigh <cleidigh@gmail.com>
+Subject: CapitalTest1
+Message-ID: <603c7cc5-ae6b-771c-08a8-9bc497367320@gmail.com>
+Date: Mon, 18 Nov 2019 17:29:22 -0500
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.9.1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+Content-Language: en-US
+X-Spam-Status: No, score=0.2
+X-Spam-Score: 2
+X-Spam-Bar: /
+X-Ham-Report: Spam detection software, running on the system "ehub33.webhostinghub.com",
+ has NOT identified this incoming email as spam.  The original
+ message has been attached to this so you can view it or label
+ similar future email.  If you have any questions, see
+ root\@localhost for details.
+ 
+ Content preview:  
+ 
+ Content analysis details:   (0.2 points, 5.0 required)
+ 
+  pts rule name              description
+ ---- ---------------------- --------------------------------------------------
+ -0.0 RCVD_IN_DNSWL_NONE     RBL: Sender listed at https://www.dnswl.org/,
+                              no trust
+                             [209.85.222.169 listed in list.dnswl.org]
+ -1.9 BAYES_00               BODY: Bayes spam probability is 0 to 1%
+                             [score: 0.0000]
+ -0.0 RCVD_IN_MSPIKE_H2      RBL: Average reputation (+2)
+                             [209.85.222.169 listed in wl.mailspike.net]
+  0.0 FREEMAIL_FROM          Sender email is commonly abused enduser mail
+                             provider (cleidigh[at]gmail.com)
+ -0.0 SPF_PASS               SPF: sender matches SPF record
+ -0.1 DKIM_VALID_EF          Message has a valid DKIM or DK signature from
+                             envelope-from domain
+ -0.1 DKIM_VALID_AU          Message has a valid DKIM or DK signature from
+                             author's domain
+  0.1 DKIM_SIGNED            Message has a DKIM or DK signature, not necessarily
+                             valid
+ -0.1 DKIM_VALID             Message has at least one valid DKIM or DK signature
+  1.8 PYZOR_CHECK            Listed in Pyzor
+                             (https://pyzor.readthedocs.io/en/latest/)
+  0.5 KAM_NUMSUBJECT         Subject ends in numbers excluding current years
+  0.0 TVD_SPACE_RATIO        No description available.
+X-Spam-Flag: NO
+
+
