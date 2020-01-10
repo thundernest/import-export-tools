@@ -50,9 +50,14 @@ exportIMAPfolder,
 IETcleanName,
 IETemlx2eml,
 IETescapeBeginningFrom,
+gFolderTreeView
 */
 
 var { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
+var { MailServices } = ChromeUtils.import("resource:///modules/MailServices.jsm");
+
+var { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
 
 var MBstrBundleService = Services.strings;
 var mboximportbundle = MBstrBundleService.createBundle("chrome://mboximport/locale/mboximport.properties");
@@ -68,6 +73,9 @@ var gMsgFolderImported;
 var IETabort;
 // cleidigh where do we   get this
 var msgFolder;
+
+var nsubfolders;
+var gFolderCount;
 
 var IETprintPDFmain = {
 
@@ -215,6 +223,9 @@ function openMboxDialog() {
 	window.openDialog("chrome://mboximport/content/mboxdialog.xul", "", "chrome,modal,centerscreen", params);
 	console.debug('AfterBoxDialogue');
 	console.debug(params);
+	if (params.cancel) {
+		return;
+	}
 	console.debug('StartingImport');
 	setTimeout(importmbox, 800, params.scandir, params.keepstructure, params.openProfDir, params.recursiveMode, msgFolder);
 }
@@ -1043,10 +1054,14 @@ function findGoodFolderName(foldername, destdirNSIFILE, structure) {
 	return foldername;
 }
 
-function importALLasEML(recursive) {
+async function importALLasEML(recursive) {
 	var nsIFilePicker = Ci.nsIFilePicker;
 	var fp = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
 	var res;
+
+	// cleidigh
+	let msgFolder = GetSelectedMsgFolders()[0];
+
 
 	// Open the filepicker to choose the directory
 	fp.init(window, mboximportbundle.GetStringFromName("searchdir"), nsIFilePicker.modeGetFolder);
@@ -1057,48 +1072,100 @@ function importALLasEML(recursive) {
 		res = IETopenFPsync(fp);
 	gEMLimported = 0;
 	IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
+
+	// cleidigh
+	let folderArray = await enumerateImportFolders(fp.file);
+	console.debug('total folders ' + folderArray.length);
+	return;
+
+
 	if (res === nsIFilePicker.returnOK) {
 		setTimeout(function () { RUNimportALLasEML(fp.file, recursive); }, 1000);
 	}
 }
 
-function RUNimportALLasEML(file, recursive) {
+async function RUNimportALLasEML(file, recursive) {
 	gFileEMLarray = [];
 	gFileEMLarrayIndex = 0;
-	var buildEMLarrayRet = buildEMLarray(file, null, recursive);
+	gFolderCount = 0;
+
+	console.debug('RunImportAll');
+	nsubfolders = 0;
+	var buildEMLarrayRet = await buildEMLarray(file, null, recursive);
 	gEMLtotal = gFileEMLarray.length;
 	if (gEMLtotal < 1) {
 		IETwritestatus(mboximportbundle.GetStringFromName("numEML") + " 0" + "/" + gEMLtotal);
 		return;
 	}
+	console.debug('start importing EML : ' + nsubfolders);
 	trytoimportEML(gFileEMLarray[0].file, gFileEMLarray[0].msgFolder, false, null, true);
 }
 
-function buildEMLarray(file, fol, recursive) {
+async function buildEMLarray(file, fol, recursive) {
 	// allfiles is the nsiSimpleEnumerator with the files in the directory selected from the filepicker
 	var allfiles = file.directoryEntries;
 	var msgFolder;
 
+	console.debug('BuildTml');
 	if (!fol)
 		msgFolder = GetSelectedMsgFolders()[0];
 	else
 		msgFolder = fol;
 
+
+	var folderPromises = [];
+
 	while (allfiles.hasMoreElements()) {
 		var afile = allfiles.getNext();
 		afile = afile.QueryInterface(Ci.nsIFile);
+		// console.debug('check name: '+ afile.leafName);
 		try {
 			// https://bugzilla.mozilla.org/show_bug.cgi?id=701721 ?
 			var is_Dir = afile.isDirectory();
 		} catch (e) {
+			console.debug('directory error');
 			continue;
 		}
 
 		if (recursive && is_Dir) {
-			msgFolder.createSubfolder(afile.leafName, msgWindow);
+			nsubfolders++;
+
+			try {
+				folderPromises.push(promiseFolderAdded(afile.leafName));
+				msgFolder.createSubfolder(afile.leafName, msgWindow);
+				console.debug('create subfolder: ' + gFolderCount + ' : ' + afile.leafName + '  :  ' + afile.path);
+				gFolderCount++;
+				IETwritestatus('Created Folder : ' + gFolderCount);
+				// console.debug('CreatedFolder '+ gFolderCount);
+				updateImportedFolder(msgFolder.parent, true);
+				if (gFolderCount % 20 === 0) {
+					// if (0) {
+					console.debug('UpdateDatabase');
+					await sleepA(100);
+					msgFolder.ForceDBClosed();
+					msgFolder.updateFolder(msgWindow);
+					// updateImportedFolder(msgFolder,true );
+					await sleepA(100);
+				}
+
+
+			} catch (e) {
+				console.debug('cr eate failed: ' + nsubfolders + ' : ' + afile.leafName + '  :  ' + afile.path);
+				console.debug('CreateSub Failed ' + e);
+				// msgFolder.createSubfolder(afile.leafName, msgWindow);
+				// console.debug('tried again');
+				IETwritestatus('Import Failed : ' + gFolderCount);
+				await sleepA(100);
+				msgFolder.ForceDBClosed();
+
+				return;
+			}
+			await Promise.all(folderPromises);
+
 			var newFolder = msgFolder.getChildNamed(afile.leafName);
 			newFolder = newFolder.QueryInterface(Ci.nsIMsgFolder);
-			buildEMLarray(afile, newFolder, true);
+			// console.debug('CallBill');
+			await buildEMLarray(afile, newFolder, true);
 		} else {
 			var emlObj = {};
 			var afilename = afile.leafName;
@@ -1112,9 +1179,266 @@ function buildEMLarray(file, fol, recursive) {
 			gFileEMLarrayIndex++;
 		}
 	}
+	await Promise.all(folderPromises);
+	// console.debug('AfterAllPromises');
 	return true;
 }
 
+function sleepA(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Folder listener to resolve a promise when a folder with a certain
+ * name is added.
+ *
+ * @param name     folder name to listen for
+ * @return         promise{folder} that resolves with the new folder when the
+ *                 folder add completes
+ */
+
+function promiseFolderAdded(folderName) {
+	return new Promise((resolve, reject) => {
+		var listener = {
+			folderAdded: aFolder => {
+				if (aFolder.name == folderName) {
+					// console.debug('completed : ' + folderName);
+					MailServices.mfn.removeListener(listener);
+					resolve(aFolder);
+				}
+			},
+		};
+		MailServices.mfn.addListener(
+			listener,
+			Ci.nsIMsgFolderNotificationService.folderAdded
+		);
+	});
+};
+
+function promiseFolderMsgAdded(folderName) {
+	return new Promise((resolve, reject) => {
+		var listener = {
+			msgAdded: aMsg => {
+				console.debug('Message completed : ');
+				MailServices.mfn.removeListener(listener);
+				resolve(aMsg);
+			},
+		};
+
+		MailServices.mfn.addListener(
+			listener,
+			Ci.nsIMsgFolderNotificationService.msgAdded
+		);
+	});
+}
+
+
+async function enumerateImportFolders(rootFolder) {
+
+	console.debug('InduMurrayFalters ' + rootFolder.path);
+	/* 
+		let iterator = new OS.File.DirectoryIterator(rootFolder.path);
+		try {
+			for (let entry in iterator) {
+				if (entry.isDir) {
+					// entry is a directory
+					console.debug('Entry: '+entry.name);
+				}
+			}
+		} finally {
+			iterator.close();
+		}
+	 */
+
+	let iterator = new OS.File.DirectoryIterator(rootFolder.path);
+	let subdirs = [];
+	var promiseArray = [];
+
+	// Iterate through the directory
+	promiseArray.push(iterator.forEach(
+		function onEntry(entry) {
+			if (entry.isDir) {
+				console.debug(entry.name);
+				subdirs.push(entry);
+			}
+		}
+	));
+
+	await Promise.all(promiseArray);
+	console.debug('AllDone '+subdirs.length);
+
+	return subdirs;
+	/* 
+	// Finally, close the iterator
+	promise.then(
+		function onSuccess() {
+			iterator.close();
+			return subdirs;
+		},
+		function onFailure(reason) {
+			iterator.close();
+			throw reason;
+		}
+	);
+ */
+}
+
+async function createFolders(parent, count) {
+	count = 100;
+
+	var delay = 60;
+	console.debug('Start ' + count);
+
+
+	let afileBase = "-subfolder";
+	let folderName = "";
+
+	let count2 = 1;
+
+	for (let i2 = 1; i2 < count2 + 1; i2++) {
+		let startTime = new Date();
+		console.debug('Time: ' + startTime.toISOString());
+
+		// console.debug('cycle ' + i2);
+
+		try {
+			const folderPromises = [];
+			for (let i = 1; i < count; i++) {
+				folderName = `${i}${afileBase}`;
+				folderPromises.push(promiseFolderAdded(folderName));
+				parent.createSubfolder(folderName, msgWindow);
+				// console.debug('create :     ' + i + ' : ' + folderName);
+				if (i % 50 == 0) {
+					await Promise.all(folderPromises);
+				}
+
+				IETwritestatus('Created Folder : ' + i2 + ' :  ' + i);
+				if (i % 100 == 0) {
+					// if (0) {
+					parent.ForceDBClosed();
+					await sleepA(100);
+
+					parent.updateFolder(msgWindow);
+					// await sleepA(100);
+				}
+
+
+				if (i % 1 === 0) {
+					// if (i % 4000 == 0 && i !== 0) {
+					console.debug('adding message ' + parent.name);
+					await sleepA(50);
+					var tempfolder = parent.getChildNamed(folderName);
+					tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
+
+					parent.updateFolder(msgWindow);
+					addMessages(tempfolder);
+					parent.updateFolder(msgWindow);
+					console.debug('waiting over');
+				}
+			}
+		} catch (e) {
+			console.debug(e);
+			return;
+		}
+		// console.debug('wait clear subfolders');
+		await sleepA(500);
+
+		let MSG_FOLDER_FLAG_DIRECTORY = 0x0008;
+		// parent.deleteSubFolders(parent.getAllFoldersWithFlag(MSG_FOLDER_FLAG_DIRECTORY));
+		let top = parent.parent;
+		let parentFolderName = parent.name;
+
+		// parent.recursiveDelete(true, msgFolder);
+		// parent.Delete();
+		// create a new array, holding the folde
+		// let targets = Cc["@mozilla.org/supports-array;1"].createInstance(Ci.nsISupportsArray);
+		let targets = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+		// let targets = Cc["@mozilla.org/supports-array;1"]
+
+		targets.appendElement(parent, false);
+
+		// top.deleteSubFolders(targets, msgFolder);
+
+		top.ForceDBClosed();
+		// top.updateFolder(msgWindow);
+
+		let endTime = new Date();
+		console.debug('C: ' + i2 + ' Time End: ' + (endTime - startTime) / 1000);
+		await sleepA(500);
+		// console.debug('re-creates');
+
+		// top.createSubfolder(parentFolderName, msgFolder);
+		await sleepA(500);
+
+		/* let f = gFolderTreeView._rebuild;
+		gFolderTreeView._rebuild = function() {
+			f.call(gFolderTreeView);
+		};
+		gFolderTreeView._rebuild();
+		gFolderTreeView._tree.invalidate();
+	*/
+	}
+
+	console.debug('Done');
+}
+
+var msgId = "10050@kokkini.net";
+var aSubject = "TestMessageSubject";
+var aBody = 'this is the body';
+
+var source = "From - Sat Nov  1 12:39:54 2008\n" +
+	"X-Mozilla-Status: 0001\n" +
+	"X-Mozilla-Status2: 00000000\n" +
+	"Message-ID: <" + msgId + ">\n" +
+	"Date: Wed, 11 Jun 2008 20:32:02 -0400\n" +
+	"From: Tester <tests@mozillamessaging.invalid>\n" +
+	"MIME-Version: 1.0\n" +
+	"To: anna@example.com\n" +
+	"Subject: " + aSubject + "\n" +
+	"Content-Type: text/plain; charset=ISO-8859-1\n" +
+	"Content-Transfer-Encoding: 7bit\n" +
+	"\n" + aBody + "\n";
+
+
+/* var msg1 = "From - Sat Nov  1 12:39:54 2008\n" +
+             "X-Mozilla-Status: 0001\n" +
+             "X-Mozilla-Status2: 00000000\n" +
+ */
+// var msg1 =	"To: test@example.com\n";
+var msg1 = "From - Sat Nov  1 12:39:54 2008\n";
+msg1 += "X-Mozilla-Status: 0001\n";
+msg1 += "X-Mozilla-Status2: 00000000\n";
+
+msg1 += "To: test@example.com\n";
+msg1 += "From: test@example.com\n";
+msg1 += "Subject: 1 plaintext\n";
+msg1 += "Message-ID: <8259dd8e-2293-8765-e720-61dfcd10a6f3@example.com>\n";
+msg1 += "Date: Sat, 30 Dec 2017 19:12:38 +0100\n";
+msg1 += "User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101\n";
+msg1 += "Thunderbird/59.0a1\n";
+msg1 += "MIME-Version: 1.0\n";
+msg1 += "Content-Type: text/plain; charset=windows-1252; format=flowed\n";
+msg1 += "Content-Transfer-Encoding: base64\n";
+msg1 += "Content-Language: en-GB\n\n";
+msg1 += "U2VhcmNoIGZvciBodWh1\n";
+
+
+async function addMessages(folder) {
+	console.debug('HadMessage');
+	folder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+	folder.addMessage(msg1);
+}
+
+
+
+function cleanTree() {
+	for (let i = gFolderTreeView._rowMap.length - 1; i >= 0; i--) {
+		if (gFolderTreeView._rowMap[i]._folder.hostname == 'Local Folders') {
+			gFolderTreeView._rowMap.splice(i, 1);
+			gFolderTreeView._tree.rowCountChanged(i, -1);
+		}
+	}
+}
 function importEMLs() {
 	var msgFolder = GetSelectedMsgFolders()[0];
 	// No import for imap and news account, sorry...
@@ -1212,8 +1536,32 @@ var importEMLlistener = {
 		importEMLlistener.next();
 	},
 
-	next: function () {
+	next: async function () {
 		var nextFile;
+
+		// cleidigh
+		// Working1 80,1000,compact 25000, updateFolder
+
+		console.debug('# Messages ' + gEMLimported);
+		if (gEMLimported % 100 === 0) {
+			await sleepA(1000);
+			this.msgFolder.compact(null, msgWindow);
+			await sleepA(4000);
+			// this.msgFolder.ForceDBClosed(msgWindow);
+			this.msgFolder.updateFolder(msgWindow);
+			// await sleepA(3000);
+			// this.msgFolder.updateSummaryTotals(true);
+			// console.debug('UpdateDatabase');
+		}
+
+		if (gEMLimported % 480 === 0) {
+			await sleepA(1000);
+			this.msgFolder.compact(null, msgWindow);
+			await sleepA(25000);
+			// this.msgFolder.ForceDBClosed(msgWindow);
+			this.msgFolder.updateFolder(msgWindow);
+			// await sleepA(3000);
+		}
 
 		if (this.allEML && gEMLimported < gFileEMLarray.length) {
 			nextFile = gFileEMLarray[gEMLimported].file;
@@ -1247,6 +1595,8 @@ function trytoimportEML(file, msgFolder, removeFile, fileArray, allEML) {
 	if (file.path.indexOf(".emlx") > -1) {
 		file = IETemlx2eml(file);
 	}
+
+
 
 	// cleidigh - Handle old/new streamlisteners signatures after TB67
 	const versionChecker = Services.vc;
@@ -1309,8 +1659,21 @@ function trytoimportEML(file, msgFolder, removeFile, fileArray, allEML) {
 	}
 }
 
-function writeDataToFolder(data, msgFolder, file, removeFile) {
+async function writeDataToFolder(data, msgFolder, file, removeFile) {
 	var msgLocalFolder = msgFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+
+
+	// cleidigh
+	// console.debug('MessageData '+ data.slice(0,10));
+	// return;
+
+	// addMessages(msgLocalFolder);
+	// console.debug('Filename '+file.path);
+	// gEMLimported = gEMLimported + 1;
+	// IETwritestatus(mboximportbundle.GetStringFromName("numEML") + gEMLimported + "/" + gEMLtotal);
+
+	// return;
+
 	// strip off the null characters, that break totally import and display
 	data = data.replace(/\x00/g, "");
 	var now = new Date;
@@ -1362,7 +1725,25 @@ function writeDataToFolder(data, msgFolder, file, removeFile) {
 	// Add the prologue to the EML text
 	data = prologue + data + "\n";
 	// Add the email to the folder
-	msgLocalFolder.addMessage(data);
+
+	// cleidigh
+	console.debug('Filename ' + file.path);
+	try {
+		console.debug('MessageNumber ' + gEMLimported);
+		// let p = promiseFolderMsgAdded('');
+		msgLocalFolder.addMessage(data);
+		// await Promise.all([p]);
+		if (gEMLimported > 260) {
+			// alert("message " + file.leafName + ' : ' +gEMLimported);
+			console.debug("message " + file.leafName + ' : ' + gEMLimported);
+		}
+
+	} catch (e) {
+		console.debug(e);
+		// console.debug(data);
+		alert("message error");
+		// return;
+	}
 	gEMLimported = gEMLimported + 1;
 	IETwritestatus(mboximportbundle.GetStringFromName("numEML") + gEMLimported + "/" + gEMLtotal);
 	if (removeFile)

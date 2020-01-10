@@ -47,4 +47,10 @@ function importwrapper() {
 
 document.addEventListener("dialogaccept", function(event) {
 	importwrapper();
+	window.arguments[0].cancel = false;
+});
+
+document.addEventListener("dialogcancel", function(event) {
+	window.arguments[0].cancel = true;
+	return true;
 });

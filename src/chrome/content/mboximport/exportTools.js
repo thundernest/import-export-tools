@@ -697,7 +697,8 @@ function createIndex(type, file2, hdrArray, msgFolder, justIndex, subdir) {
 		}
 
 		var hasAtt;
-		if (hdrs[6] === 1)
+		// attachment flag may have changed from integer to string
+		if (hdrs[6] === 1 || hdrs[6] === '1')
 			hasAtt = "*";
 		else
 			hasAtt = "&nbsp;";
