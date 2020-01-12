@@ -1075,8 +1075,11 @@ async function importALLasEML(recursive) {
 
 	// cleidigh - test
 	// let folderArray = await enumerateImportFolders(fp.file);
-	// console.debug('total folders ' + folderArray.length);
-	// return;
+	let folderArray = await createFolders(msgFolder);
+	console.debug('total folders ' + folderArray.length);
+	// createImportedFolders(folderArray);
+
+	return;
 
 
 	if (res === nsIFilePicker.returnOK) {
@@ -1232,10 +1235,53 @@ function promiseFolderMsgAdded(folderName) {
 	});
 }
 
+async function createImportedFolders(folders) {
+	var msgFolder = GetSelectedMsgFolders()[0];
+
+	var file = msgFolder2LocalFile(msgFolder.parent);
+	// msgFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+	
+	console.debug('Folder : '+ file.path);
+	var rootFolder = file.path + '\\x10.sbd';
+
+	OS.File.makeDir(rootFolder)
+	.then(
+		function onSuccess() {
+			console.debug('directories assess');
+			OS.File.makeDir(rootFolder+"\\test2.sbd")
+				.then(
+					function onSuccess() {
+						console.debug('directories success2');
+						var file = msgFolder2LocalFile(msgFolder.parent);
+						var file2 = file.clone();
+
+						file.appendRelativePath('x16.sbd\\test5');
+						console.debug('PS '+file.path);
+
+						file.createUnique(0, 0644);
+						file2.appendRelativePath('x16.sbd\\test5.msf');
+						console.debug('P '+file2.path);
+
+						// var tempfolder = msgFolder.getChildNamed('test5');
+						// tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
+	
+
+						file2.createUnique(0, 0644);
+						msgFolder.ForceDBClosed();
+						msgFolder.updateFolder(msgWindow);
+						var tempfolder = msgFolder;
+						IETupdateFolder(tempfolder);
+						setTimeout(updateImportedFolder, 2000, tempfolder, true);
+						console.debug('DoneUpdating');
+					});
+
+		});
+
+}
 
 async function enumerateImportFolders(rootFolder) {
 
-	console.debug('InduMurrayFalters ' + rootFolder.path);
+	console.debug('RootFolderPath ' + rootFolder.path);
 	/* 
 		let iterator = new OS.File.DirectoryIterator(rootFolder.path);
 		try {
@@ -1259,6 +1305,7 @@ async function enumerateImportFolders(rootFolder) {
 		function onEntry(entry) {
 			if (entry.isDir) {
 				console.debug(entry.name);
+				console.debug(entry.path);
 				subdirs.push(entry);
 			}
 		}
@@ -1284,16 +1331,20 @@ async function enumerateImportFolders(rootFolder) {
 }
 
 async function createFolders(parent, count) {
-	count = 100;
+	count = 450;
+	let count2 = 1;
 
 	var delay = 60;
+
+	count = IETprefs.getIntPref("extensions.importexporttoolsng.subject.max_length") * 10;
+    count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
+    var mcount = IETprefs.getIntPref("extensions.importexporttoolsng.recipients.max_length");
 	console.debug('Start ' + count);
 
 
 	let afileBase = "-subfolder";
 	let folderName = "";
 
-	let count2 = 1;
 
 	for (let i2 = 1; i2 < count2 + 1; i2++) {
 		let startTime = new Date();
@@ -1308,12 +1359,13 @@ async function createFolders(parent, count) {
 				folderPromises.push(promiseFolderAdded(folderName));
 				parent.createSubfolder(folderName, msgWindow);
 				// console.debug('create :     ' + i + ' : ' + folderName);
-				if (i % 50 == 0) {
+				// if (i % 50 == 0 && 0) {
 					await Promise.all(folderPromises);
-				}
+				// }
 
-				IETwritestatus('Created Folder : ' + i2 + ' :  ' + i);
-				if (i % 100 == 0) {
+				// IETwritestatus('Created Folder : ' + i2 + ' :  ' + i);
+				// if (i % 100 == 0 && 0) {
+					if (i % 100 == 0) {
 					// if (0) {
 					parent.ForceDBClosed();
 					await sleepA(100);
@@ -1323,21 +1375,23 @@ async function createFolders(parent, count) {
 				}
 
 
-				if (i % 1 === 0) {
+				// if (i % 1 === 0 && 0) {
+					if (i % 1 === 0) {
 					// if (i % 4000 == 0 && i !== 0) {
 					console.debug('adding message ' + parent.name);
-					await sleepA(50);
+					await sleepA(5);
 					var tempfolder = parent.getChildNamed(folderName);
 					tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
 
-					parent.updateFolder(msgWindow);
-					addMessages(tempfolder);
-					parent.updateFolder(msgWindow);
+					// parent.updateFolder(msgWindow);
+					addMessages(tempfolder, mcount);
+					// parent.updateFolder(msgWindow);
 					console.debug('waiting over');
 				}
 			}
 		} catch (e) {
 			console.debug(e);
+			alert(e);
 			return;
 		}
 		// console.debug('wait clear subfolders');
@@ -1357,7 +1411,7 @@ async function createFolders(parent, count) {
 
 		targets.appendElement(parent, false);
 
-		// top.deleteSubFolders(targets, msgFolder);
+		top.deleteSubFolders(targets, msgFolder);
 
 		top.ForceDBClosed();
 		// top.updateFolder(msgWindow);
@@ -1365,9 +1419,16 @@ async function createFolders(parent, count) {
 		let endTime = new Date();
 		console.debug('C: ' + i2 + ' Time End: ' + (endTime - startTime) / 1000);
 		await sleepA(500);
-		// console.debug('re-creates');
 
-		// top.createSubfolder(parentFolderName, msgFolder);
+		let folderPromises = [];
+		folderPromises.push(promiseFolderAdded(parentFolderName));
+		top.createSubfolder(parentFolderName, msgWindow);
+		await Promise.all(folderPromises);
+
+		var tempfolder2 = top.getChildNamed(parentFolderName);
+		tempfolder2 = tempfolder2.QueryInterface(Ci.nsIMsgFolder);
+		parent = tempfolder2;
+		console.debug(parent.name);
 		await sleepA(500);
 
 		/* let f = gFolderTreeView._rebuild;
@@ -1423,10 +1484,12 @@ msg1 += "Content-Language: en-GB\n\n";
 msg1 += "U2VhcmNoIGZvciBodWh1\n";
 
 
-async function addMessages(folder) {
+async function addMessages(folder, count) {
 	console.debug('HadMessage');
 	folder.QueryInterface(Ci.nsIMsgLocalMailFolder);
-	folder.addMessage(msg1);
+	for (let index = 0; index < count; index++) {
+		folder.addMessage(msg1);
+	}
 }
 
 
