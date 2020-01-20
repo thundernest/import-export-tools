@@ -1074,9 +1074,24 @@ async function importALLasEML(recursive) {
 	IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
 
 	// cleidigh - test
-	// let folderArray = await enumerateImportFolders(fp.file);
-	let folderArray = await createFolders(msgFolder);
-	console.debug('total folders ' + folderArray.length);
+	let startTime = new Date();
+	console.debug('StartTime: ' + startTime.toISOString());
+
+
+	// let folderArray = await promiseRecursiveDirs(fp.file);
+	// let folderArray = await walkDirs(fp.file.path);
+	// let folderArray = await dirWalk(fp.file);
+	// let folderArray = dirWalk(fp.file);
+	worker1(fp.file.path);
+	// let folderArray = await createFolders(msgFolder);
+	// console.debug('total folders ' + folderArray.length);
+
+	let endTime = new Date();
+	console.debug('ElapsedTime: ' + (endTime - startTime) / 1000);
+
+	// folderArray.map(f => console.debug(f.name));
+	// folderArray.map(f => console.debug(f));
+	// console.debug(folderArray);
 	// createImportedFolders(folderArray);
 
 	return;
@@ -1240,42 +1255,42 @@ async function createImportedFolders(folders) {
 
 	var file = msgFolder2LocalFile(msgFolder.parent);
 	// msgFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
-	
-	console.debug('Folder : '+ file.path);
+
+	console.debug('Folder : ' + file.path);
 	var rootFolder = file.path + '\\x10.sbd';
 
 	OS.File.makeDir(rootFolder)
-	.then(
-		function onSuccess() {
-			console.debug('directories assess');
-			OS.File.makeDir(rootFolder+"\\test2.sbd")
-				.then(
-					function onSuccess() {
-						console.debug('directories success2');
-						var file = msgFolder2LocalFile(msgFolder.parent);
-						var file2 = file.clone();
+		.then(
+			function onSuccess() {
+				console.debug('directories assess');
+				OS.File.makeDir(rootFolder + "\\test2.sbd")
+					.then(
+						function onSuccess() {
+							console.debug('directories success2');
+							var file = msgFolder2LocalFile(msgFolder.parent);
+							var file2 = file.clone();
 
-						file.appendRelativePath('x16.sbd\\test5');
-						console.debug('PS '+file.path);
+							file.appendRelativePath('x16.sbd\\test5');
+							console.debug('PS ' + file.path);
 
-						file.createUnique(0, 0644);
-						file2.appendRelativePath('x16.sbd\\test5.msf');
-						console.debug('P '+file2.path);
+							file.createUnique(0, 0644);
+							file2.appendRelativePath('x16.sbd\\test5.msf');
+							console.debug('P ' + file2.path);
 
-						// var tempfolder = msgFolder.getChildNamed('test5');
-						// tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
-	
+							// var tempfolder = msgFolder.getChildNamed('test5');
+							// tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
 
-						file2.createUnique(0, 0644);
-						msgFolder.ForceDBClosed();
-						msgFolder.updateFolder(msgWindow);
-						var tempfolder = msgFolder;
-						IETupdateFolder(tempfolder);
-						setTimeout(updateImportedFolder, 2000, tempfolder, true);
-						console.debug('DoneUpdating');
-					});
 
-		});
+							file2.createUnique(0, 0644);
+							msgFolder.ForceDBClosed();
+							msgFolder.updateFolder(msgWindow);
+							var tempfolder = msgFolder;
+							IETupdateFolder(tempfolder);
+							setTimeout(updateImportedFolder, 2000, tempfolder, true);
+							console.debug('DoneUpdating');
+						});
+
+			});
 
 }
 
@@ -1290,7 +1305,7 @@ async function enumerateImportFolders(rootFolder) {
 					// entry is a directory
 					console.debug('Entry: '+entry.name);
 				}
-			}
+.			}
 		} finally {
 			iterator.close();
 		}
@@ -1307,14 +1322,313 @@ async function enumerateImportFolders(rootFolder) {
 				console.debug(entry.name);
 				console.debug(entry.path);
 				subdirs.push(entry);
+				// let s2 = await enumerateImportFolders(entry);
+				subdirs = subdirs.concat(s2);
 			}
 		}
 	));
 
-	await Promise.all(promiseArray);
-	console.debug('AllDone '+subdirs.length);
+	let p = await Promise.all(promiseArray);
+	console.debug('AllDone ' + subdirs.length);
 
+	// p.resolve(subdirs);
+	// Finally, close the iterator
+	p.then(
+		function onSuccess() {
+			console.debug('Success ' + subdirs);
+			iterator.close();
+			return subdirs;
+		},
+
+		function onFailure(reason) {
+			iterator.close();
+			throw reason;
+		}
+	);
+}
+
+async function walkDirs(rootDir) {
+	var s = [];
+	console.debug('StartWalk: ' + rootDir);
+	const subdirs = await promiseRecursiveDirs(rootDir);
+	console.debug('AfterMainWalk ' + subdirs);
+
+	const files = await Promise.all(subdirs.map(async (subdir) => {
+		console.debug('SubScan: ' + subdir.path);
+		const res = subdir.path;
+		console.debug('subd ' + subdir.name);
+		console.debug('R Walk ' + res);
+		// console.debug(res);
+		var s2 = await walkDirs(res);
+		// return await walkDirs(res);
+		// if (s2.length) {
+		console.debug('returning s2:');
+		console.debug(s2);
+		// console.debug('returning now');
+		return s2;
+		// }
+
+		// console.debug('ReturnNull '+subdir);
+		// return subdir;
+	}));
+
+	console.debug('Files ' + files.length);
+	console.debug(files);
+	if (files === []) {
+		console.debug('empty array');
+	}
+	if (files.length) {
+		// console.debug('f0 '+ files[0].name);
+
+		let rv = subdirs.concat(files);
+		console.debug('W Return C ' + rv);
+		return rv;
+	}
+	console.debug('OnlySubjectIs ' + subdirs);
 	return subdirs;
+	// return files.reduce((a, f) => a.concat(f), []);
+}
+
+
+async function promiseRecursiveDirs(rootDirPath) {
+	// return new Promise((resolve, reject) => {
+	console.debug('Recursive RootFolderPath ' + rootDirPath);
+
+	var iterator = new OS.File.DirectoryIterator(rootDirPath);
+	var subdirs = [];
+	var promiseArray = [];
+
+	// Iterate through the directory
+	let p = iterator.forEach(
+		function onEntry(entry) {
+			if (entry.isDir) {
+				console.debug(entry.name);
+				// console.debug(entry.path);
+				subdirs.push(entry);
+				// let s2 = await enumerateImportFolders2(entry);
+				// let s2 = promiseRecursiveDirs(entry);
+
+				// .then( s2 => subdirs.concat(s2));
+				// subdirs = subdirs.concat(s2);
+			}
+		}
+	);
+
+	return p.then(
+		function onSuccess() {
+			iterator.close();
+			console.debug('Success');
+			return subdirs;
+		},
+		function onFailure(reason) {
+			iterator.close();
+			throw reason;
+		}
+	);
+
+	/* 		  
+			return p.then(s => {
+				console.debug('Resolved: ');
+				console.debug(subdirs);
+				return subdirs;
+			});
+	 */
+	// await Promise.all([p]);
+
+	// console.debug('BeforeResolve');
+	// resolve(subdirs);
+	// console.debug('AfterResolve');
+	// return p;
+
+	// });
+};
+
+var worker;
+
+function worker1(dirPath) {
+	worker = new ChromeWorker("chrome://mboximport/content/worker1.js");
+	console.debug('started worker');
+	// worker.onmessage = function(event) { code.innerHTML = event.data; }
+  worker.postMessage(dirPath);
+}
+
+function dirWalk(dir) {
+
+	// allfiles is the nsiSimpleEnumerator with the files in the directory selected from the filepicker
+	var allfiles = dir.directoryEntries;
+	var allDirs = [];
+
+	while (allfiles.hasMoreElements()) {
+		var afile = allfiles.getNext();
+		afile = afile.QueryInterface(Ci.nsIFile);
+
+		// console.debug('check name: '+ afile.leafName);
+
+		try {
+			// https://bugzilla.mozilla.org/show_bug.cgi?id=701721 ?
+			var is_Dir = afile.isDirectory();
+		} catch (e) {
+			console.debug(e);
+		}
+		if (is_Dir) {
+			allDirs.push(afile.path);
+
+			let subfiles = dirWalk(afile);
+			allDirs = allDirs.concat(subfiles);
+			console.debug('all ');
+			console.debug(allDirs);
+		}
+	}
+	return allDirs;
+	
+}
+
+
+// this works - ~0.7s for 660 folders
+async function dirWalk3(dirPath) {
+	var iterator = new OS.File.DirectoryIterator(dirPath);
+	var subdirs = [];
+
+		// Iterate through the directory
+		let p = iterator.forEach(
+			function onEntry(entry) {
+				if (entry.isDir) {
+					// console.debug(entry.name);
+					// console.debug(entry.path);
+					subdirs.push(entry);
+				}
+			}
+		);
+	
+		return p.then(
+			async function onSuccess() {
+				iterator.close();
+				console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
+				
+				// for (const dir of subdirs) {
+				// 	// console.debug('subWalk '+ dir.name);
+				// 	let dirs = await dirWalk(dir.path);
+				// 	subdirs = subdirs.concat(dirs);
+				// 	// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
+				// }
+
+				let dirs = subdirs.map(async d => dirWalk(d.path));
+
+				await Promise.all(dirs);
+				if (dirs.length) {
+					subdirs = subdirs.concat(dirs);
+				} else {
+					console.debug('NoSubs '+subdirs);
+					return subdirs;
+				}
+				
+				// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
+				return subdirs;
+			},
+			function onFailure(reason) {
+				iterator.close();
+				throw reason;
+			}
+		);
+
+}
+
+
+// this works - ~0.7s for 660 folders
+async function dirWalk2(dirPath) {
+	var iterator = new OS.File.DirectoryIterator(dirPath);
+	var subdirs = [];
+
+		// Iterate through the directory
+		let p = iterator.forEach(
+			function onEntry(entry) {
+				if (entry.isDir) {
+					// console.debug(entry.name);
+					// console.debug(entry.path);
+					subdirs.push(entry);
+				}
+			}
+		);
+	
+		return p.then(
+			async function onSuccess() {
+				iterator.close();
+				// console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
+				
+				for (const dir of subdirs) {
+					// console.debug('subWalk '+ dir.name);
+					let dirs = await dirWalk(dir.path);
+					subdirs = subdirs.concat(dirs);
+					// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
+				}
+
+				return subdirs;
+			},
+			function onFailure(reason) {
+				iterator.close();
+				throw reason;
+			}
+		);
+
+}
+
+// basic single directory iterator
+async function dirWalk1(dirPath) {
+	var iterator = new OS.File.DirectoryIterator(dirPath);
+	console.debug('Start dWalk ' + dirPath);
+	var subdirs = [];
+
+		// Iterate through the directory
+		let p = iterator.forEach(
+			function onEntry(entry) {
+				if (entry.isDir) {
+					// console.debug(entry.name);
+					// console.debug(entry.path);
+					subdirs.push(entry);
+				}
+			}
+		);
+	
+		return p.then(
+			function onSuccess() {
+				iterator.close();
+				console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
+				return subdirs;
+			},
+			function onFailure(reason) {
+				iterator.close();
+				throw reason;
+			}
+		);
+
+}
+
+
+async function enumerateImportFolders2(rootFolder) {
+
+	console.debug('RootFolderPath ' + rootFolder.path);
+
+	let iterator = new OS.File.DirectoryIterator(rootFolder.path);
+	let subdirs = [];
+	var promiseArray = [];
+
+	// Iterate through the directory
+	promiseArray.push(iterator.forEach(
+		function onEntry(entry) {
+			if (entry.isDir) {
+				console.debug(entry.name);
+				console.debug(entry.path);
+				subdirs.push(entry);
+				// let s2 = await enumerateImportFolders2(entry);
+				// subdirs = subdirs.concat(s2);
+			}
+		}
+	));
+
+	let p = await Promise.all(promiseArray);
+	console.debug('AllDone ' + subdirs.length);
+
+	p.resolve(subdirs);
 	/* 
 	// Finally, close the iterator
 	promise.then(
@@ -1330,6 +1644,9 @@ async function enumerateImportFolders(rootFolder) {
  */
 }
 
+
+
+
 async function createFolders(parent, count) {
 	count = 450;
 	let count2 = 1;
@@ -1337,8 +1654,8 @@ async function createFolders(parent, count) {
 	var delay = 60;
 
 	count = IETprefs.getIntPref("extensions.importexporttoolsng.subject.max_length") * 10;
-    count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
-    var mcount = IETprefs.getIntPref("extensions.importexporttoolsng.recipients.max_length");
+	count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
+	var mcount = IETprefs.getIntPref("extensions.importexporttoolsng.recipients.max_length");
 	console.debug('Start ' + count);
 
 
@@ -1360,12 +1677,12 @@ async function createFolders(parent, count) {
 				parent.createSubfolder(folderName, msgWindow);
 				// console.debug('create :     ' + i + ' : ' + folderName);
 				// if (i % 50 == 0 && 0) {
-					await Promise.all(folderPromises);
+				await Promise.all(folderPromises);
 				// }
 
 				// IETwritestatus('Created Folder : ' + i2 + ' :  ' + i);
 				// if (i % 100 == 0 && 0) {
-					if (i % 100 == 0) {
+				if (i % 100 == 0) {
 					// if (0) {
 					parent.ForceDBClosed();
 					await sleepA(100);
@@ -1376,7 +1693,7 @@ async function createFolders(parent, count) {
 
 
 				// if (i % 1 === 0 && 0) {
-					if (i % 1 === 0) {
+				if (i % 1 === 0) {
 					// if (i % 4000 == 0 && i !== 0) {
 					console.debug('adding message ' + parent.name);
 					await sleepA(5);
