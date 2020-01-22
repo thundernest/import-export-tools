@@ -1,0 +1,208 @@
+
+
+CreateFolders with message addition tests 1:
+
+relevant code
+
+
+async function createFolders(parent, count) {
+	count = 450;
+	let count2 = 1;
+	var mCountTotal = 0;
+	var delay = 60;
+
+	// count : # folders
+	// count2 : test cycles
+	// mcount : # messages per folder
+	// msize : size in bytes
+	var msize = 10000;
+	for (let index = 0; index < msize/100; index++) {
+		msg1+= msg100ch;
+	}
+	msg1+="\n\n";
+
+	count = IETprefs.getIntPref("extensions.importexporttoolsng.subject.max_length") * 10;
+	count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
+	var mcount = IETprefs.getIntPref("extensions.importexporttoolsng.recipients.max_length");
+	console.debug('CreateFolders Test1 - Start Cycles: ' + count2 + ' Folders: ' + count + ' MsgPerFolder: '+ mcount + ' MsgSize: '+ msize);
+
+
+	let afileBase = "-subfolder";
+	let folderName = "";
+
+
+	for (let i2 = 1; i2 < count2 + 1; i2++) {
+		let startTime = new Date();
+		console.debug('Time: ' + startTime.toISOString());
+
+		// console.debug('cycle ' + i2);
+
+		try {
+			const folderPromises = [];
+			for (let i = 1; i < count+1; i++) {
+				folderName = `${i}${afileBase}`;
+				folderPromises.push(promiseFolderAdded(folderName));
+				parent.createSubfolder(folderName, msgWindow);
+				// console.debug('create :     ' + i + ' : ' + folderName);
+				// if (i % 50 == 0 && 0) {
+				await Promise.all(folderPromises);
+				// }
+
+				// IETwritestatus('Created Folder : ' + i2 + ' :  ' + i);
+				// if (i % 100 == 0 && 0) {
+				if (i % 100 == 0) {
+					// if (0) {
+					parent.ForceDBClosed();
+					await sleepA(100);
+
+					parent.updateFolder(msgWindow);
+					// await sleepA(100);
+				}
+
+
+				// if (i % 1 === 0 && 0) {
+				if (i % 1 === 0) {
+					// if (i % 4000 == 0 && i !== 0) {
+					// console.debug('adding message ' + parent.name);
+					await sleepA(5);
+					var tempfolder = parent.getChildNamed(folderName);
+					tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
+
+					// parent.updateFolder(msgWindow);
+					addMessages(tempfolder, mcount, msize);
+					mCountTotal += mcount;
+					IETwritestatus('Cycle: ' + i2 + '  Folder: ' + folderName + ' : ' + mCountTotal)
+					// parent.updateFolder(msgWindow);
+					// console.debug('waiting over');
+				}
+			}
+		} catch (e) {
+			console.debug(e);
+			alert(e);
+			return;
+		}
+		// console.debug('wait clear subfolders');
+		await sleepA(500);
+
+		let MSG_FOLDER_FLAG_DIRECTORY = 0x0008;
+		// parent.deleteSubFolders(parent.getAllFoldersWithFlag(MSG_FOLDER_FLAG_DIRECTORY));
+		let top = parent.parent;
+		let parentFolderName = parent.name;
+
+		// parent.recursiveDelete(true, msgFolder);
+		// parent.Delete();
+		// create a new array, holding the folde
+		// let targets = Cc["@mozilla.org/supports-array;1"].createInstance(Ci.nsISupportsArray);
+		let targets = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+		// let targets = Cc["@mozilla.org/supports-array;1"]
+
+		targets.appendElement(parent, false);
+
+		top.deleteSubFolders(targets, msgFolder);
+
+		top.ForceDBClosed();
+		// top.updateFolder(msgWindow);
+
+		let endTime = new Date();
+		console.debug('Cycle: ' + i2 + ' Time End: ' + (endTime - startTime) / 1000);
+		await sleepA(500);
+
+		let folderPromises = [];
+		folderPromises.push(promiseFolderAdded(parentFolderName));
+		top.createSubfolder(parentFolderName, msgWindow);
+		await Promise.all(folderPromises);
+
+		var tempfolder2 = top.getChildNamed(parentFolderName);
+		tempfolder2 = tempfolder2.QueryInterface(Ci.nsIMsgFolder);
+		parent = tempfolder2;
+		console.debug(parent.name);
+		await sleepA(500);
+
+		/* let f = gFolderTreeView._rebuild;
+		gFolderTreeView._rebuild = function() {
+			f.call(gFolderTreeView);
+		};
+		gFolderTreeView._rebuild();
+		gFolderTreeView._tree.invalidate();
+	*/
+	}
+
+	console.debug('Done');
+}
+
+
+StartTime: 2020-01-22T21:20:37.105Z mboximport.js:1078:10
+CreateFolders Test1 - Start Cycles: 2 Folders: 100 MsgPerFolder: 2 MsgSize: 10000 mboximport.js:1691:10
+Time: 2020-01-22T21:20:37.105Z mboximport.js:1700:11
+Cycle: 1 Time End: 3.983 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:20:42.094Z mboximport.js:1700:11
+Cycle: 2 Time End: 3.795 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Done mboximport.js:1794:10
+StartTime: 2020-01-22T21:24:00.275Z mboximport.js:1078:10
+CreateFolders Test1 - Start Cycles: 4 Folders: 600 MsgPerFolder: 10 MsgSize: 10000 mboximport.js:1691:10
+Time: 2020-01-22T21:24:00.276Z mboximport.js:1700:11
+Cycle: 1 Time End: 60.829 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:25:02.110Z mboximport.js:1700:11
+Cycle: 2 Time End: 60.793 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:26:03.913Z mboximport.js:1700:11
+Cycle: 3 Time End: 61.139 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:27:06.078Z mboximport.js:1700:11
+Cycle: 4 Time End: 61.169 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Done mboximport.js:1794:10
+StartTime: 2020-01-22T21:36:35.289Z mboximport.js:1078:10
+CreateFolders Test1 - Start Cycles: 6 Folders: 800 MsgPerFolder: 20 MsgSize: 10000 mboximport.js:1691:10
+Time: 2020-01-22T21:36:35.291Z mboximport.js:1700:11
+Cycle: 1 Time End: 144.158 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:39:00.454Z mboximport.js:1700:11
+Cycle: 2 Time End: 145.386 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:41:26.849Z mboximport.js:1700:11
+Cycle: 3 Time End: 145.909 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:43:53.767Z mboximport.js:1700:11
+Cycle: 4 Time End: 148.246 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:46:23.021Z mboximport.js:1700:11
+Cycle: 5 Time End: 148.114 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:48:52.144Z mboximport.js:1700:11
+Cycle: 6 Time End: 147.881 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Done mboximport.js:1794:10
+give me two seconds to start something then turn on your mind
+SyntaxError: unexpected token: identifier debugger eval code:1:5
+NS_NOINTERFACE: Component returned failure code: 0x80004002 (NS_NOINTERFACE) [nsISupports.QueryInterface] stack-trace-collector.js:84
+StartTime: 2020-01-22T21:52:54.872Z mboximport.js:1078:10
+CreateFolders Test1 - Start Cycles: 8 Folders: 900 MsgPerFolder: 40 MsgSize: 10000 mboximport.js:1691:10
+Time: 2020-01-22T21:52:54.873Z mboximport.js:1700:11
+Cycle: 1 Time End: 252.474 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T21:57:08.357Z mboximport.js:1700:11
+Cycle: 2 Time End: 252.547 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T22:01:21.914Z mboximport.js:1700:11
+Cycle: 3 Time End: 256.401 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T22:05:39.326Z mboximport.js:1700:11
+Cycle: 4 Time End: 257.597 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T22:09:57.943Z mboximport.js:1700:11
+Cycle: 5 Time End: 261.384 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T22:14:20.335Z mboximport.js:1700:11
+Cycle: 6 Time End: 264.786 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T22:18:46.130Z mboximport.js:1700:11
+Cycle: 7 Time End: 260.38 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Time: 2020-01-22T22:23:07.518Z mboximport.js:1700:11
+Cycle: 8 Time End: 263.738 mboximport.js:1771:11
+a3 mboximport.js:1782:11
+Done mboximport.js:1794:10

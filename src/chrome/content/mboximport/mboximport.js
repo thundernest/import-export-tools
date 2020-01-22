@@ -1082,12 +1082,12 @@ async function importALLasEML(recursive) {
 	// let folderArray = await walkDirs(fp.file.path);
 	// let folderArray = await dirWalk(fp.file);
 	// let folderArray = dirWalk(fp.file);
-	worker1(fp.file.path);
-	// let folderArray = await createFolders(msgFolder);
+	// worker1(fp.file.path);
+	let folderArray = await createFolders(msgFolder);
 	// console.debug('total folders ' + folderArray.length);
 
-	let endTime = new Date();
-	console.debug('ElapsedTime: ' + (endTime - startTime) / 1000);
+	// let endTime = new Date();
+	// console.debug('ElapsedTime: ' + (endTime - startTime) / 1000);
 
 	// folderArray.map(f => console.debug(f.name));
 	// folderArray.map(f => console.debug(f));
@@ -1109,14 +1109,36 @@ async function RUNimportALLasEML(file, recursive) {
 
 	console.debug('RunImportAll');
 	nsubfolders = 0;
+
+	let count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
+
+	// if (count2 > 99) {
 	var buildEMLarrayRet = await buildEMLarray(file, null, recursive);
+	// }
+
 	gEMLtotal = gFileEMLarray.length;
 	if (gEMLtotal < 1) {
 		IETwritestatus(mboximportbundle.GetStringFromName("numEML") + " 0" + "/" + gEMLtotal);
 		return;
 	}
 	console.debug('start importing EML : ' + nsubfolders);
-	trytoimportEML(gFileEMLarray[0].file, gFileEMLarray[0].msgFolder, false, null, true);
+	if (count2 > 100) {
+		trytoimportEML(gFileEMLarray[0].file, gFileEMLarray[0].msgFolder, false, null, true);
+
+	} else if (count2 === 98) {
+		// importEMLTest1(gFileEMLarray[0].file, gFileEMLarray[0].msgFolder);
+		importEMLTest1(gFileEMLarray);
+	}
+}
+
+async function importEMLTest1(files, count) {
+	files.forEach(f => console.debug('File: ' + f.file.leafName + '  : ' + f.msgFolder.name));
+
+	files.forEach(async (f, i) => {
+		await addMessages(f.msgFolder, count);
+		// console.debug('Added ' + i + '  ' + f.file.leafName + ' ' + f.msgFolder.relativePathName);
+	});
+	return;
 }
 
 async function buildEMLarray(file, fol, recursive) {
@@ -1449,7 +1471,7 @@ function worker1(dirPath) {
 	worker = new ChromeWorker("chrome://mboximport/content/worker1.js");
 	console.debug('started worker');
 	// worker.onmessage = function(event) { code.innerHTML = event.data; }
-  worker.postMessage(dirPath);
+	worker.postMessage(dirPath);
 }
 
 function dirWalk(dir) {
@@ -1480,7 +1502,7 @@ function dirWalk(dir) {
 		}
 	}
 	return allDirs;
-	
+
 }
 
 
@@ -1489,47 +1511,47 @@ async function dirWalk3(dirPath) {
 	var iterator = new OS.File.DirectoryIterator(dirPath);
 	var subdirs = [];
 
-		// Iterate through the directory
-		let p = iterator.forEach(
-			function onEntry(entry) {
-				if (entry.isDir) {
-					// console.debug(entry.name);
-					// console.debug(entry.path);
-					subdirs.push(entry);
-				}
+	// Iterate through the directory
+	let p = iterator.forEach(
+		function onEntry(entry) {
+			if (entry.isDir) {
+				// console.debug(entry.name);
+				// console.debug(entry.path);
+				subdirs.push(entry);
 			}
-		);
-	
-		return p.then(
-			async function onSuccess() {
-				iterator.close();
-				console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
-				
-				// for (const dir of subdirs) {
-				// 	// console.debug('subWalk '+ dir.name);
-				// 	let dirs = await dirWalk(dir.path);
-				// 	subdirs = subdirs.concat(dirs);
-				// 	// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
-				// }
+		}
+	);
 
-				let dirs = subdirs.map(async d => dirWalk(d.path));
+	return p.then(
+		async function onSuccess() {
+			iterator.close();
+			console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
 
-				await Promise.all(dirs);
-				if (dirs.length) {
-					subdirs = subdirs.concat(dirs);
-				} else {
-					console.debug('NoSubs '+subdirs);
-					return subdirs;
-				}
-				
-				// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
+			// for (const dir of subdirs) {
+			// 	// console.debug('subWalk '+ dir.name);
+			// 	let dirs = await dirWalk(dir.path);
+			// 	subdirs = subdirs.concat(dirs);
+			// 	// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
+			// }
+
+			let dirs = subdirs.map(async d => dirWalk(d.path));
+
+			await Promise.all(dirs);
+			if (dirs.length) {
+				subdirs = subdirs.concat(dirs);
+			} else {
+				console.debug('NoSubs ' + subdirs);
 				return subdirs;
-			},
-			function onFailure(reason) {
-				iterator.close();
-				throw reason;
 			}
-		);
+
+			// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
+			return subdirs;
+		},
+		function onFailure(reason) {
+			iterator.close();
+			throw reason;
+		}
+	);
 
 }
 
@@ -1539,36 +1561,36 @@ async function dirWalk2(dirPath) {
 	var iterator = new OS.File.DirectoryIterator(dirPath);
 	var subdirs = [];
 
-		// Iterate through the directory
-		let p = iterator.forEach(
-			function onEntry(entry) {
-				if (entry.isDir) {
-					// console.debug(entry.name);
-					// console.debug(entry.path);
-					subdirs.push(entry);
-				}
+	// Iterate through the directory
+	let p = iterator.forEach(
+		function onEntry(entry) {
+			if (entry.isDir) {
+				// console.debug(entry.name);
+				// console.debug(entry.path);
+				subdirs.push(entry);
 			}
-		);
-	
-		return p.then(
-			async function onSuccess() {
-				iterator.close();
-				// console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
-				
-				for (const dir of subdirs) {
-					// console.debug('subWalk '+ dir.name);
-					let dirs = await dirWalk(dir.path);
-					subdirs = subdirs.concat(dirs);
-					// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
-				}
+		}
+	);
 
-				return subdirs;
-			},
-			function onFailure(reason) {
-				iterator.close();
-				throw reason;
+	return p.then(
+		async function onSuccess() {
+			iterator.close();
+			// console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
+
+			for (const dir of subdirs) {
+				// console.debug('subWalk '+ dir.name);
+				let dirs = await dirWalk(dir.path);
+				subdirs = subdirs.concat(dirs);
+				// console.debug('accumulated dirs: ' + subdirs.map(d => d.name + ' '));
 			}
-		);
+
+			return subdirs;
+		},
+		function onFailure(reason) {
+			iterator.close();
+			throw reason;
+		}
+	);
 
 }
 
@@ -1578,28 +1600,28 @@ async function dirWalk1(dirPath) {
 	console.debug('Start dWalk ' + dirPath);
 	var subdirs = [];
 
-		// Iterate through the directory
-		let p = iterator.forEach(
-			function onEntry(entry) {
-				if (entry.isDir) {
-					// console.debug(entry.name);
-					// console.debug(entry.path);
-					subdirs.push(entry);
-				}
+	// Iterate through the directory
+	let p = iterator.forEach(
+		function onEntry(entry) {
+			if (entry.isDir) {
+				// console.debug(entry.name);
+				// console.debug(entry.path);
+				subdirs.push(entry);
 			}
-		);
-	
-		return p.then(
-			function onSuccess() {
-				iterator.close();
-				console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
-				return subdirs;
-			},
-			function onFailure(reason) {
-				iterator.close();
-				throw reason;
-			}
-		);
+		}
+	);
+
+	return p.then(
+		function onSuccess() {
+			iterator.close();
+			console.debug('dirs: ' + subdirs.map(d => d.name + ' '));
+			return subdirs;
+		},
+		function onFailure(reason) {
+			iterator.close();
+			throw reason;
+		}
+	);
 
 }
 
@@ -1650,13 +1672,23 @@ async function enumerateImportFolders2(rootFolder) {
 async function createFolders(parent, count) {
 	count = 450;
 	let count2 = 1;
-
+	var mCountTotal = 0;
 	var delay = 60;
+
+	// count : # folders
+	// count2 : test cycles
+	// mcount : # messages per folder
+	// msize : size in bytes
+	var msize = 10000;
+	for (let index = 0; index < msize/100; index++) {
+		msg1+= msg100ch;
+	}
+	msg1+="\n\n";
 
 	count = IETprefs.getIntPref("extensions.importexporttoolsng.subject.max_length") * 10;
 	count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
 	var mcount = IETprefs.getIntPref("extensions.importexporttoolsng.recipients.max_length");
-	console.debug('Start ' + count);
+	console.debug('CreateFolders Test1 - Start Cycles: ' + count2 + ' Folders: ' + count + ' MsgPerFolder: '+ mcount + ' MsgSize: '+ msize);
 
 
 	let afileBase = "-subfolder";
@@ -1671,7 +1703,7 @@ async function createFolders(parent, count) {
 
 		try {
 			const folderPromises = [];
-			for (let i = 1; i < count; i++) {
+			for (let i = 1; i < count+1; i++) {
 				folderName = `${i}${afileBase}`;
 				folderPromises.push(promiseFolderAdded(folderName));
 				parent.createSubfolder(folderName, msgWindow);
@@ -1695,15 +1727,17 @@ async function createFolders(parent, count) {
 				// if (i % 1 === 0 && 0) {
 				if (i % 1 === 0) {
 					// if (i % 4000 == 0 && i !== 0) {
-					console.debug('adding message ' + parent.name);
+					// console.debug('adding message ' + parent.name);
 					await sleepA(5);
 					var tempfolder = parent.getChildNamed(folderName);
 					tempfolder = tempfolder.QueryInterface(Ci.nsIMsgFolder);
 
 					// parent.updateFolder(msgWindow);
-					addMessages(tempfolder, mcount);
+					addMessages(tempfolder, mcount, msize);
+					mCountTotal += mcount;
+					IETwritestatus('Cycle: ' + i2 + '  Folder: ' + folderName + ' : ' + mCountTotal)
 					// parent.updateFolder(msgWindow);
-					console.debug('waiting over');
+					// console.debug('waiting over');
 				}
 			}
 		} catch (e) {
@@ -1734,7 +1768,7 @@ async function createFolders(parent, count) {
 		// top.updateFolder(msgWindow);
 
 		let endTime = new Date();
-		console.debug('C: ' + i2 + ' Time End: ' + (endTime - startTime) / 1000);
+		console.debug('Cycle: ' + i2 + ' Time End: ' + (endTime - startTime) / 1000);
 		await sleepA(500);
 
 		let folderPromises = [];
@@ -1800,12 +1834,67 @@ msg1 += "Content-Transfer-Encoding: base64\n";
 msg1 += "Content-Language: en-GB\n\n";
 msg1 += "U2VhcmNoIGZvciBodWh1\n";
 
+var msg100ch = "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
 
-async function addMessages(folder, count) {
-	console.debug('HadMessage');
-	folder.QueryInterface(Ci.nsIMsgLocalMailFolder);
-	for (let index = 0; index < count; index++) {
-		folder.addMessage(msg1);
+async function addMessages(folder, count, size) {
+	try {
+		folder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+		for (let index = 0; index < count; index++) {
+			folder.addMessage(msg1);
+			// console.debug('addMessage: success ' + count);
+		}
+	} catch (e) {
+		console.debug('addMessage: failed ' + count);
+		alert('addMessage FAILED');
+		return false;
+	}
+	return true;
+}
+
+function rebuildSummary(folder) {
+	// folder is already introduced in our containing function and is
+	//  lexically captured and available to us.
+	if (folder.locked) {
+		folder.throwAlertMsg("operationFailedFolderBusy", msgWindow);
+		return;
+	}
+	if (folder.supportsOffline) {
+		// Remove the offline store, if any.
+		let offlineStore = folder.filePath;
+		// XXX todo: figure out how to delete a maildir directory async. This
+		// delete causes main thread lockup for large maildir folders.
+		if (offlineStore.exists()) {
+			offlineStore.remove(true);
+		}
+	}
+
+	// We may be rebuilding a folder that is not the displayed one.
+	let sameFolder = gFolderDisplay.displayedFolder == folder;
+	if (sameFolder) {
+		gFolderDisplay.view.close();
+	}
+
+	// Send a notification that we are triggering a database rebuild.
+	MailServices.mfn.notifyItemEvent(
+		folder,
+		"FolderReindexTriggered",
+		null,
+		null
+	);
+
+	folder.msgDatabase.summaryValid = false;
+
+	var msgDB = folder.msgDatabase;
+	msgDB.summaryValid = false;
+	try {
+		folder.closeAndBackupFolderDB("");
+	} catch (e) {
+		// In a failure, proceed anyway since we're dealing with problems
+		folder.ForceDBClosed();
+	}
+	folder.updateFolder(msgWindow);
+	if (sameFolder) {
+		gFolderDisplay.show(folder);
 	}
 }
 
@@ -1892,7 +1981,7 @@ var importEMLlistener = {
 		this.onStopRequest68(aRequest, aStatus);
 	},
 
-	onStopRequest68: function (aRequest, aStatus) {
+	onStopRequest68: async function (aRequest, aStatus) {
 		var text = this.mData;
 		try {
 			var index = text.search(/\r\n\r\n/);
@@ -1913,7 +2002,7 @@ var importEMLlistener = {
 
 		if (!this.imap)
 			writeDataToFolder(data, this.msgFolder, this.file, this.removeFile);
-		importEMLlistener.next();
+		await importEMLlistener.next();
 	},
 
 	next: async function () {
@@ -1923,23 +2012,26 @@ var importEMLlistener = {
 		// Working1 80,1000,compact 25000, updateFolder
 
 		console.debug('# Messages ' + gEMLimported);
-		if (gEMLimported % 100 === 0) {
+		if (gEMLimported % 55 === 0) {
 			await sleepA(1000);
-			this.msgFolder.compact(null, msgWindow);
-			await sleepA(4000);
+			// this.msgFolder.compact(null, msgWindow);
+			// await sleepA(4000);
 			// this.msgFolder.ForceDBClosed(msgWindow);
-			this.msgFolder.updateFolder(msgWindow);
+			// this.msgFolder.updateFolder(msgWindow);
 			// await sleepA(3000);
 			// this.msgFolder.updateSummaryTotals(true);
-			// console.debug('UpdateDatabase');
+			rebuildSummary(this.msgFolder);
+			console.debug('UpdateDatabase');
 		}
 
-		if (gEMLimported % 480 === 0) {
+		if (gEMLimported % 100 === 0 && 0) {
+			console.debug('Compact');
 			await sleepA(1000);
 			this.msgFolder.compact(null, msgWindow);
 			await sleepA(25000);
 			// this.msgFolder.ForceDBClosed(msgWindow);
 			this.msgFolder.updateFolder(msgWindow);
+			console.debug('CompactDone');
 			// await sleepA(3000);
 		}
 
@@ -2109,19 +2201,21 @@ async function writeDataToFolder(data, msgFolder, file, removeFile) {
 	// cleidigh
 	console.debug('Filename ' + file.path);
 	try {
-		console.debug('MessageNumber ' + gEMLimported);
-		// let p = promiseFolderMsgAdded('');
+		console.debug('Start MessageNumber ' + gEMLimported);
+		let p = promiseFolderMsgAdded('');
+		sleepA(5);
 		msgLocalFolder.addMessage(data);
-		// await Promise.all([p]);
+		await Promise.all([p]);
 		if (gEMLimported > 260) {
 			// alert("message " + file.leafName + ' : ' +gEMLimported);
-			console.debug("message " + file.leafName + ' : ' + gEMLimported);
+			console.debug("message okay" + file.leafName + ' : ' + gEMLimported);
 		}
 
 	} catch (e) {
-		console.debug(e);
+		// console.debug(e);
+		console.debug("message failed: " + file.leafName + ' : ' + gEMLimported);
 		// console.debug(data);
-		alert("message error");
+		// alert("message error");
 		// return;
 	}
 	gEMLimported = gEMLimported + 1;
