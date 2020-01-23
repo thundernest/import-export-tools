@@ -1083,7 +1083,18 @@ async function importALLasEML(recursive) {
 	// let folderArray = await dirWalk(fp.file);
 	// let folderArray = dirWalk(fp.file);
 	// worker1(fp.file.path);
-	let folderArray = await createFolders(msgFolder);
+
+	var test_cycles = 1;
+	var test_fcount = 20;
+	var test_mcount = 10;
+	var test_msize = 10000;
+
+	test_cycles = IETprefs.getIntPref("extensions.importexporttoolsng.test_cycles");
+	test_fcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_fcount");
+	test_mcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_mcount");
+	test_msize = IETprefs.getIntPref("extensions.importexporttoolsng.test_msize");
+
+	let folderArray = await createFolders(msgFolder, test_cycles, test_fcount, test_mcount, test_msize);
 	// console.debug('total folders ' + folderArray.length);
 
 	// let endTime = new Date();
@@ -1669,9 +1680,12 @@ async function enumerateImportFolders2(rootFolder) {
 
 
 
-async function createFolders(parent, count) {
-	count = 450;
-	let count2 = 1;
+async function createFolders(parent, cycles, fcount, mcount, msize) {
+	// count = 450;
+	let count2 = cycles;
+	var count = fcount;
+
+
 	var mCountTotal = 0;
 	var delay = 60;
 
@@ -1679,16 +1693,17 @@ async function createFolders(parent, count) {
 	// count2 : test cycles
 	// mcount : # messages per folder
 	// msize : size in bytes
-	var msize = 10000;
-	for (let index = 0; index < msize/100; index++) {
-		msg1+= msg100ch;
-	}
-	msg1+="\n\n";
+	//  var msize = 10000;
 
-	count = IETprefs.getIntPref("extensions.importexporttoolsng.subject.max_length") * 10;
-	count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
-	var mcount = IETprefs.getIntPref("extensions.importexporttoolsng.recipients.max_length");
-	console.debug('CreateFolders Test1 - Start Cycles: ' + count2 + ' Folders: ' + count + ' MsgPerFolder: '+ mcount + ' MsgSize: '+ msize);
+	for (let index = 0; index < msize / 100; index++) {
+		msg1 += msg100ch;
+	}
+	msg1 += "\n\n";
+
+	// count = IETprefs.getIntPref("extensions.importexporttoolsng.subject.max_length") * 10;
+	// count2 = IETprefs.getIntPref("extensions.importexporttoolsng.author.max_length");
+	// var mcount = IETprefs.getIntPref("extensions.importexporttoolsng.recipients.max_length");
+	console.debug('CreateFolders Test1 - Start Cycles: ' + count2 + ' Folders: ' + count + ' MsgPerFolder: ' + mcount + ' MsgSize: ' + msize);
 
 
 	let afileBase = "-subfolder";
@@ -1703,7 +1718,7 @@ async function createFolders(parent, count) {
 
 		try {
 			const folderPromises = [];
-			for (let i = 1; i < count+1; i++) {
+			for (let i = 1; i < count + 1; i++) {
 				folderName = `${i}${afileBase}`;
 				folderPromises.push(promiseFolderAdded(folderName));
 				parent.createSubfolder(folderName, msgWindow);
@@ -1757,6 +1772,8 @@ async function createFolders(parent, count) {
 		// parent.Delete();
 		// create a new array, holding the folde
 		// let targets = Cc["@mozilla.org/supports-array;1"].createInstance(Ci.nsISupportsArray);
+
+
 		let targets = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
 		// let targets = Cc["@mozilla.org/supports-array;1"]
 
@@ -1769,6 +1786,7 @@ async function createFolders(parent, count) {
 
 		let endTime = new Date();
 		console.debug('Cycle: ' + i2 + ' Time End: ' + (endTime - startTime) / 1000);
+		console.debug('TotalMessages: ' + mCountTotal);
 		await sleepA(500);
 
 		let folderPromises = [];
@@ -1780,7 +1798,7 @@ async function createFolders(parent, count) {
 		tempfolder2 = tempfolder2.QueryInterface(Ci.nsIMsgFolder);
 		parent = tempfolder2;
 		console.debug(parent.name);
-		await sleepA(500);
+		await sleepA(5500);
 
 		/* let f = gFolderTreeView._rebuild;
 		gFolderTreeView._rebuild = function() {

@@ -20,10 +20,13 @@
 
 		<tabbox>
 			<tabs>
-				<tab label="&misc;" selected="true" />
+				<tab label="&misc;"  />
 				<tab label="&filenameFormat;" />
 				<tab label="&savedirs;" />
 				<tab label="&backupTab;" />
+
+				<tab label="Tests" selected="true" />
+
 			</tabs>
 			<tabpanels>
 				<tabpanel>
@@ -289,6 +292,35 @@
 						</hbox>
 					</groupbox>
 				</tabpanel>
+
+				<!-- cleidigh test options panel -->
+				<tabpanel>
+
+				<vbox>
+				<hbox>
+				<label value="Cycles : " width="100px" />
+				<html:input id="test_cycles" type="number" value="1"/>
+				</hbox>
+
+				<hbox>
+				<label value="# Folders : " width="100px"/>
+				<html:input id="test_fcount" type="number" value="10"/>
+				</hbox>
+
+				<hbox>
+				<label value="# Messages/Fld : " width="100px"/>
+				<html:input id="test_mcount" type="number" value="10"/>
+				</hbox>
+
+				<hbox>
+				<label value="Message Size(b) : " width="100px"/>
+				<html:input id="test_msize" type="number" value="1000"/>
+				</hbox>
+
+				</vbox>
+
+				</tabpanel>
+
 
 			</tabpanels>
 		</tabbox>

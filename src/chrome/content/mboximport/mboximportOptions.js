@@ -28,6 +28,14 @@
 
 var { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
 
+
+// cleidigh test options
+var test_cycles = 1;
+var test_fcount = 20;
+var test_mcount = 10;
+var test_msize = 10000;
+
+
 function IETsetCharsetPopup(charsetPref) {
     const versionChecker = Services.vc;
     const currentVersion = Services.appinfo.platformVersion;
@@ -243,6 +251,18 @@ function initMboxImportPanel() {
         document.getElementById("backupLast").value = localTime;
     }
     document.getElementById("modalWin").checked = IETprefs.getBoolPref("extensions.importexporttoolsng.autobackup.use_modal_dialog");
+
+    test_cycles = IETprefs.getIntPref("extensions.importexporttoolsng.test_cycles", test_cycles);
+    test_fcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_fcount", test_fcount);
+    test_mcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_mcount", test_mcount);
+    test_msize = IETprefs.getIntPref("extensions.importexporttoolsng.test_msize", test_msize);
+
+    document.getElementById("test_cycles").value = test_cycles;
+    document.getElementById("test_fcount").value = test_fcount;
+    document.getElementById("test_mcount").value = test_mcount;
+    document.getElementById("test_msize").value = test_msize;
+
+
 }
 
 /* function setSaveMode(type) {
@@ -334,6 +354,13 @@ function saveMboxImportPrefs() {
     IETprefs.setBoolPref("extensions.importexporttoolsng.autobackup.use_modal_dialog", document.getElementById("modalWin").checked);
     IETprefs.setIntPref("extensions.importexporttoolsng.autobackup.type", document.getElementById("backupType").selectedIndex);
     IETprefs.setIntPref("extensions.importexporttoolsng.autobackup.save_mode", document.getElementById("saveMode").selectedIndex);
+
+    // cleidigh test options
+    IETprefs.setIntPref("extensions.importexporttoolsng.test_cycles", document.getElementById("test_cycles").value);
+    IETprefs.setIntPref("extensions.importexporttoolsng.test_fcount", document.getElementById("test_fcount").value);
+    IETprefs.setIntPref("extensions.importexporttoolsng.test_mcount", document.getElementById("test_mcount").value);
+    IETprefs.setIntPref("extensions.importexporttoolsng.test_msize", document.getElementById("test_msize").value);
+
 }
 
 function customNamesCheck(el) {
