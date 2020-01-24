@@ -1142,6 +1142,57 @@ async function RUNimportALLasEML(file, recursive) {
 	}
 }
 
+function importTest1() {
+	// cleidigh
+	let msgFolder = GetSelectedMsgFolders()[0];
+
+/* 
+	// Open the filepicker to choose the directory
+	fp.init(window, mboximportbundle.GetStringFromName("searchdir"), nsIFilePicker.modeGetFolder);
+	// Set the filepicker to open the last opened directory
+	if (fp.show)
+		res = fp.show();
+	else
+		res = IETopenFPsync(fp);
+	gEMLimported = 0;
+	IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
+ */
+	// cleidigh - test
+	let startTime = new Date();
+	console.debug('StartTime: ' + startTime.toISOString());
+
+
+	// let folderArray = await promiseRecursiveDirs(fp.file);
+	// let folderArray = await walkDirs(fp.file.path);
+	// let folderArray = await dirWalk(fp.file);
+	// let folderArray = dirWalk(fp.file);
+	// worker1(fp.file.path);
+
+	var test_cycles = 1;
+	var test_fcount = 20;
+	var test_mcount = 10;
+	var test_msize = 10000;
+
+	test_cycles = IETprefs.getIntPref("extensions.importexporttoolsng.test_cycles");
+	test_fcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_fcount");
+	test_mcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_mcount");
+	test_msize = IETprefs.getIntPref("extensions.importexporttoolsng.test_msize");
+
+	let folderArray = createFolders(msgFolder, test_cycles, test_fcount, test_mcount, test_msize);
+	// console.debug('total folders ' + folderArray.length);
+
+	// let endTime = new Date();
+	// console.debug('ElapsedTime: ' + (endTime - startTime) / 1000);
+
+	// folderArray.map(f => console.debug(f.name));
+	// folderArray.map(f => console.debug(f));
+	// console.debug(folderArray);
+	// createImportedFolders(folderArray);
+
+	return;
+}
+
+
 async function importEMLTest1(files, count) {
 	files.forEach(f => console.debug('File: ' + f.file.leafName + '  : ' + f.msgFolder.name));
 

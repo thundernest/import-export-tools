@@ -7,7 +7,6 @@ StartTime: 2020-01-22T22:56:29.108Z mboximport.js:1078:10
 CreateFolders Test1 - Start Cycles: 1 Folders: 100 MsgPerFolder: 100 MsgSize: 10000 mboximport.js:1691:10
 Time: 2020-01-22T22:56:29.109Z mboximport.js:1700:11
 Cycle: 1 Time End: 48.329 mboximport.js:1773:11
-Component returned failure code: 0x80550013 [nsIMsgFolder.createSubfolder] mboximport.js:1778
 
 
 2Gb 500 folders 200/folder
@@ -15,4 +14,3 @@ StartTime: 2020-01-22T23:06:23.142Z mboximport.js:1078:10
 CreateFolders Test1 - Start Cycles: 1 Folders: 500 MsgPerFolder: 200 MsgSize: 10000 mboximport.js:1691:10
 Time: 2020-01-22T23:06:23.143Z mboximport.js:1700:11
 Cycle: 1 Time End: 438.767 mboximport.js:1773:11 ~3.6min/Gb
-Component returned failure code: 0x80550013 [nsIMsgFolder.createSubfolder] mboximport.js:1778
