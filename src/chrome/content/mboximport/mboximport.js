@@ -1146,17 +1146,17 @@ function importTest1() {
 	// cleidigh
 	let msgFolder = GetSelectedMsgFolders()[0];
 
-/* 
-	// Open the filepicker to choose the directory
-	fp.init(window, mboximportbundle.GetStringFromName("searchdir"), nsIFilePicker.modeGetFolder);
-	// Set the filepicker to open the last opened directory
-	if (fp.show)
-		res = fp.show();
-	else
-		res = IETopenFPsync(fp);
-	gEMLimported = 0;
-	IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
- */
+	/* 
+		// Open the filepicker to choose the directory
+		fp.init(window, mboximportbundle.GetStringFromName("searchdir"), nsIFilePicker.modeGetFolder);
+		// Set the filepicker to open the last opened directory
+		if (fp.show)
+			res = fp.show();
+		else
+			res = IETopenFPsync(fp);
+		gEMLimported = 0;
+		IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
+	 */
 	// cleidigh - test
 	let startTime = new Date();
 	console.debug('StartTime: ' + startTime.toISOString());
@@ -1190,6 +1190,150 @@ function importTest1() {
 	// createImportedFolders(folderArray);
 
 	return;
+}
+
+async function importTest2() {
+	var msgFolder = GetSelectedMsgFolders()[0];
+	msgFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+
+	var nsIFilePicker = Ci.nsIFilePicker;
+	var fp = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+	var res;
+
+	// Open the filepicker to choose the directory
+	fp.init(window, mboximportbundle.GetStringFromName("searchdir"), nsIFilePicker.modeOpen);
+	// Set the filepicker to open the last opened directory
+	if (fp.show)
+		res = fp.show();
+	else
+		res = IETopenFPsync(fp);
+	gEMLimported = 0;
+	IETwritestatus("read to file " + fp.file.path);
+
+	console.debug('File  ' + fp.file.path);
+
+	var test_cycles = 1;
+	var test_fcount = 20;
+	var test_mcount = 10;
+	var test_msize = 10000;
+
+	test_cycles = IETprefs.getIntPref("extensions.importexporttoolsng.test_cycles");
+	test_fcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_fcount");
+	test_mcount = IETprefs.getIntPref("extensions.importexporttoolsng.test_mcount");
+	test_msize = IETprefs.getIntPref("extensions.importexporttoolsng.test_msize");
+
+	let startTimeOuter = new Date();
+	for (let index = 1; index < test_cycles + 1; index++) {
+		console.debug('\nCycle: ' + index);
+		let startTime = new Date();
+		let stepStartTime;
+		let stepTime;
+		// console.debug('Cycle StartTime: ' + startTime.toISOString());
+
+		let fileArray = await readFile1(fp.file.path);
+		stepTime = new Date();
+		// console.debug('File size : ' + fileArray.length / 1000 + ' k');
+
+		// console.debug('ReadFile ElapsedTime: ' + (stepTime - startTime) / 1000 + ' sec');
+
+		console.debug('Fixup');
+		stepStartTime = new Date();
+		fixFile(fileArray);
+		stepTime = new Date();
+		// console.debug('Fix File ElapsedTime: ' + (stepTime - stepStartTime) / 1000 + ' sec');
+
+		let endTime = new Date();
+
+		for (let i = 0; i < test_mcount; i++) {
+			stepStartTime = new Date();
+			msgFolder.addMessage(fileArray);
+			stepTime = new Date();
+			// console.debug('Add ' + i + ' Message ElapsedTime: ' + (stepTime - stepStartTime) / 1000 + ' sec');
+		}
+
+		console.debug('Cycle ElapsedTime: ' + (endTime - startTime) / 1000 + ' sec');
+	}
+	let endTime = new Date();
+
+	console.debug('Total ElapsedTime: ' + (endTime - startTimeOuter) / 1000);
+
+
+}
+
+async function readFile1(filePath) {
+
+	let decoder = new TextDecoder();        // This decoder can be reused for several reads
+	let promise = OS.File.read(filePath); // Read the complete file as an array
+	promise = promise.then(
+		function onSuccess(array) {
+
+			// console.debug('file okay ');
+			// console.debug('Size ' + array.length);
+			return decoder.decode(array);        // Convert this array to a text
+
+		}
+	);
+	return promise;
+}
+
+function fixFile(data) {
+	// Fix and transform data
+
+	var msgFolder = GetSelectedMsgFolders()[0];
+	var msgLocalFolder = msgFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+
+	// strip off the null characters, that break totally import and display
+	data = data.replace(/\x00/g, "");
+	var now = new Date;
+	var nowString;
+
+	try {
+		nowString = now.toString().match(/.+:\d\d/);
+		nowString = nowString.toString().replace(/\d{4} /, "");
+		nowString = nowString + " " + now.getFullYear();
+	} catch (e) {
+		nowString = now.toString().replace(/GMT.+/, "");
+	}
+
+	var top = data.substring(0, 2000);
+
+	// Fix for crazy format returned by Hotmail view-source
+	if (top.match(/X-Message-Delivery:.+\r?\n\r?\n/) || top.match(/X-Message-Info:.+\r?\n\r?\n/))
+		data = data.replace(/(\r?\n\r?\n)/g, "\n");
+
+	// Fix for some not-compliant date headers
+	if (top.match(/Posted-Date\:/))
+		data = data.replace("Posted-Date:", "Date:");
+	if (top.match(/X-OriginalArrivalTime:.+\r?\n\r?\n/))
+		data = data.replace("X-OriginalArrivalTime:", "Date:");
+
+	// Some eml files begin with "From <something>"
+	// This causes that Thunderbird will not handle properly the message
+	// so in this case the first line is deleted
+	data = data.replace(/^From\s+.+\r?\n/, "");
+
+	// Prologue needed to add the message to the folder
+	var prologue = "From - " + nowString + "\n"; // The first line must begin with "From -", the following is not important
+	// If the message has no X-Mozilla-Status, we add them to it
+	if (data.includes("X-Mozilla-Status"))
+		prologue = prologue + "X-Mozilla-Status: 0000\nX-Mozilla-Status2: 00000000\n";
+	else if (IETprefs.getBoolPref("extensions.importexporttoolsng.reset_mozilla_status")) {
+		// Reset the X-Mozilla status
+		data = data.replace(/X-Mozilla-Status: \d{4}/, "X-Mozilla-Status: 0000");
+		data = data.replace(/X-Mozilla-Status2: \d{8}/, "X-Mozilla-Status2: 00000000");
+	}
+	// If the message has no X-Account-Key, we add it to it, taking it from the account selected
+	if (data.includes("X-Account-Key")) {
+		var myAccountManager = Cc["@mozilla.org/messenger/account-manager;1"]
+			.getService(Ci.nsIMsgAccountManager);
+		var myAccount = myAccountManager.FindAccountForServer(msgFolder.server);
+		prologue = prologue + "X-Account-Key: " + myAccount.key + "\n";
+	}
+	data = IETescapeBeginningFrom(data);
+	// Add the prologue to the EML text
+	data = prologue + data + "\n";
+	
+	return data;
 }
 
 
@@ -1790,8 +1934,8 @@ async function createFolders(parent, cycles, fcount, mcount, msize) {
 				}
 
 
-				// if (i % 1 === 0 && 0) {
-				if (i % 1 === 0) {
+				if (i % 1 === 0 && 0) {
+				// if (i % 1 === 0) {
 					// if (i % 4000 == 0 && i !== 0) {
 					// console.debug('adding message ' + parent.name);
 					await sleepA(5);
@@ -1805,6 +1949,7 @@ async function createFolders(parent, cycles, fcount, mcount, msize) {
 					// parent.updateFolder(msgWindow);
 					// console.debug('waiting over');
 				}
+				IETwritestatus('Cycle: ' + i2 + '  Folder: ' + folderName)
 			}
 		} catch (e) {
 			console.debug(e);
