@@ -1142,6 +1142,41 @@ async function RUNimportALLasEML(file, recursive) {
 	}
 }
 
+
+function promptImportDirectory() {
+	var nsIFilePicker = Ci.nsIFilePicker;
+	var fp = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+	var res;
+
+	// Open the filepicker to choose the directory
+	fp.init(window, mboximportbundle.GetStringFromName("searchdir"), nsIFilePicker.modeGetFolder);
+	// Set the filepicker to open the last opened directory
+	if (fp.show)
+		res = fp.show();
+	else
+		res = IETopenFPsync(fp);
+
+	IETwritestatus("Import Directory: " + fp.file.path);
+
+	return fp;
+}
+
+function importEMLExperiment1() {
+	var msgFolder = GetSelectedMsgFolders()[0];
+	msgFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+
+	console.debug('Starting EML Import To: ' + msgFolder.name);
+	// Get important directory using picker
+	var importDir_fp = promptImportDirectory();
+
+	// Scan folders/files using worker
+	worker1(importDir_fp.file.path);
+
+
+
+}
+
+// create top level folders, mcount messages
 function importTest1() {
 	// cleidigh
 	let msgFolder = GetSelectedMsgFolders()[0];
@@ -1332,7 +1367,7 @@ function fixFile(data) {
 	data = IETescapeBeginningFrom(data);
 	// Add the prologue to the EML text
 	data = prologue + data + "\n";
-	
+
 	return data;
 }
 
@@ -1478,7 +1513,7 @@ function promiseFolderMsgAdded(folderName) {
 	});
 }
 
-async function createImportedFolders(folders) {
+async function createImportedFolders2(folders) {
 	var msgFolder = GetSelectedMsgFolders()[0];
 
 	var file = msgFolder2LocalFile(msgFolder.parent);
@@ -1551,7 +1586,7 @@ async function enumerateImportFolders(rootFolder) {
 				console.debug(entry.path);
 				subdirs.push(entry);
 				// let s2 = await enumerateImportFolders(entry);
-				subdirs = subdirs.concat(s2);
+				// subdirs = subdirs.concat(s2);
 			}
 		}
 	));
@@ -1671,13 +1706,164 @@ async function promiseRecursiveDirs(rootDirPath) {
 	// });
 };
 
-var worker;
+var worker = null;
 
-function worker1(dirPath) {
-	worker = new ChromeWorker("chrome://mboximport/content/worker1.js");
+async function worker1(dirPath) {
+	if (worker === null) {
+		worker = new ChromeWorker("chrome://mboximport/content/worker1.js");
+	}
+
+	var rootImportDirName = OS.Path.basename(dirPath);
+	var rootImportFolder = GetSelectedMsgFolders()[0];
+
 	console.debug('started worker');
-	// worker.onmessage = function(event) { code.innerHTML = event.data; }
+	worker.onmessage = async function (event) {
+		// event.data.folderArray.map(f => console.debug(f));
+		let startTime = new Date();
+		let stepStartTime = startTime;
+		let stepTime;
+
+		
+		var folderArray = await createImportFolders(rootImportFolder, rootImportDirName, event.data.folderArray);
+		stepTime = new Date();
+		console.debug('CreateFolders ElapsedTime: ' + (stepTime - stepStartTime) / 1000 + ' sec');
+
+
+		stepStartTime = new Date();
+		// console.debug('F ' + folderArray.length);
+		for (let i = 0; i < folderArray.length; i++) {
+			var currentFolder = folderArray[i];
+			currentFolder.nsiFolder = currentFolder.nsiFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
+			
+			// try {
+			// currentFolder.nsiFolder.updateFolder(msgWindow);
+			// } catch {
+			// 	console.debug('update Here');
+			// }
+
+			// console.debug('directory ' + currentFolder.dirPath);
+			var fileArray = await iterateFilesInDir(currentFolder.dirPath);
+			// var fileArray = [1];
+
+			for (let i2 = 0; i2 < fileArray.length; i2++) {
+				const fileEntry = fileArray[i2];
+
+				console.debug('ReadFile : ' + fileEntry.path);
+				let fileTextArray = await readFile1(fileEntry.path);
+
+				// stepTime = new Date();
+				console.debug('File size : ' + fileTextArray.length / 1000 + ' k');
+				// console.debug('ReadFile ElapsedTime: ' + (stepTime - startTime) / 1000 + ' sec');
+				// console.debug('Fixup');
+				stepStartTime = new Date();
+				fileTextArray = fixFile(fileTextArray);
+				stepTime = new Date();
+				// console.debug('Fix File ElapsedTime: ' + (stepTime - stepStartTime) / 1000 + ' sec');
+
+				let endTime = new Date();
+
+				stepStartTime = new Date();
+				// console.debug('stealthy folder  ' + currentFolder.nsiFolder.name);
+				try {
+					currentFolder.nsiFolder.addMessage(fileTextArray);
+					// sleepA(5);
+
+					// let p = promiseFolderMsgAdded('');
+					// sleepA(5);
+					// currentFolder.nsiFolder.addMessage(msg1);
+					// let mcount = 1;
+					// addMessages(currentFolder.nsiFolder, mcount, 1000);
+					// await Promise.all([p]);
+					console.debug('Message ' + i);
+
+					// console.debug('SkipMessage '+currentFolder.nsiFolder.name + '  '+ fileEntry.path);
+				} catch (error) {
+					console.debug(error);
+					await sleepA(100);
+					console.debug('DatabaseUpdate');
+					rebuildSummary(currentFolder.nsiFolder);
+					await sleepA(100);
+					continue;
+
+					currentFolder.nsiFolder.ForceDBClosed();
+					await sleepA(100);
+
+					currentFolder.nsiFolder.updateFolder(msgWindow);
+					await sleepA(100);
+					// let p = promiseFolderMsgAdded('');
+					// sleepA(5);
+					// currentFolder.nsiFolder.addMessage(msg1);
+					// await Promise.all([p]);
+
+					// console.debug(fileTextArray);
+					continue;
+				}
+				stepTime = new Date();
+				// console.debug('Add ' + i + ' Message ElapsedTime: ' + (stepTime - stepStartTime) / 1000 + ' sec');
+
+				console.debug('Cycle ElapsedTime: ' + (endTime - startTime) / 1000 + ' sec');
+
+
+			}
+
+			// currentFolder.nsiFolder.addMessage(msg1);
+			// sleepA(5);
+			
+			// console.debug(fileArray);
+			if (i % 80 === 0) {
+				try {
+					console.debug('UpdateType 2');
+					await sleepA(100);
+					// rebuildSummary(currentFolder.nsiFolder);
+					currentFolder.nsiFolder.parent.ForceDBClosed();
+					await sleepA(100);
+
+					currentFolder.nsiFolder.parent.updateFolder(msgWindow);
+					await sleepA(100);
+				} catch (e) {
+					console.debug('UpdateErrorIgnore ' + e);
+				}
+			}
+
+		}
+
+		stepTime = new Date();
+		console.debug('Folder-Msgs ElapsedTime: ' + (stepTime - stepStartTime) / 1000 + ' sec');
+
+		// console.debug('Folder array');
+		// folderArray.map((f, i) => console.debug(i + ' : ' + f.nsiFolder.name));
+
+		// create a new array, holding the folde
+		// let nsiFolderArray = Cc["@mozilla.org/supports-array;1"].createInstance(Ci.nsISupportsArray);
+		// ListDescendents(nsiFolderArray);
+
+		// createImportedFolders(event.data.folderArray);
+	};
 	worker.postMessage(dirPath);
+}
+
+
+async function iterateFilesInDir(dirPath, fileTypes) {
+	let iterator = new OS.File.DirectoryIterator(dirPath);
+	let subdirs = [];
+	var promiseArray = [];
+
+	// Iterate through the directory
+	promiseArray.push(iterator.forEach(
+		function onEntry(entry) {
+			if (!entry.isDir) {
+				// console.debug(entry.name);
+				// console.debug(entry.path);
+				subdirs.push(entry);
+				// let s2 = await enumerateImportFolders(entry);
+				// subdirs = subdirs.concat(s2);
+			}
+		}
+	));
+
+	let p = await Promise.all(promiseArray);
+	// console.debug('AllDone ' + subdirs.length);
+	return subdirs;
 }
 
 function dirWalk(dir) {
@@ -1745,6 +1931,7 @@ async function dirWalk3(dirPath) {
 			await Promise.all(dirs);
 			if (dirs.length) {
 				subdirs = subdirs.concat(dirs);
+				// console.debug( event.data.folderArray.map(f => ));
 			} else {
 				console.debug('NoSubs ' + subdirs);
 				return subdirs;
@@ -1872,6 +2059,119 @@ async function enumerateImportFolders2(rootFolder) {
  */
 }
 
+async function createImportFolders(rootImportFolder, rootImportDirName, folderArray) {
+
+	let folderName = "";
+	let startTime = new Date();
+	console.debug('Time: ' + startTime.toISOString());
+
+	var currentParentFolder = rootImportFolder;
+	var folderPromises = [];
+	var lastFolderName = "";
+	var nsiFolderArray = [];
+
+	var fcount = 0;
+	try {
+		for (var i = 0; i < folderArray.length; i++) {
+			if (i % 80 === 0) {
+				console.debug('UpdateType 2');
+				// if (0) {
+				currentParentFolder.ForceDBClosed();
+				await sleepA(100);
+
+				currentParentFolder.updateFolder(msgWindow);
+				// await sleepA(100);
+			}
+
+
+			if (i % 100 === 0 && 0) {
+				console.debug('UpdateType 1');
+				rebuildSummary(currentParentFolder);
+			}
+
+			folderPromises = [];
+			let folderPath = folderArray[i];
+
+			// console.debug('FolderPath ' + i + ' : ' + folderPath.slice(folderPath.indexOf(rootImportDirName)));
+			let folderPathParts = OS.Path.split(folderPath).components;
+			let folderName = folderPathParts[folderPathParts.length - 1];
+			// console.debug(folderPathParts);
+
+			let nextParentFolderName = folderPathParts[folderPathParts.length - 2];
+			// console.debug('');
+			if (nextParentFolderName === rootImportDirName) {
+				// console.debug('ReturnTop');
+				currentParentFolder = rootImportFolder;
+			}
+
+			// console.debug('NextParent ' + nextParentFolderName);
+
+			if (nextParentFolderName === currentParentFolder.name || nextParentFolderName === rootImportDirName) {
+
+				// console.debug('Current P');
+				folderPromises.push(promiseFolderAdded(folderName));
+				currentParentFolder.createSubfolder(folderName, msgWindow);
+				// console.debug('create ' + fcount + ' :  ' + folderName);
+				fcount++;
+				await Promise.all(folderPromises);
+				nsiFolderArray[i] = { nsiFolder: currentParentFolder.getChildNamed(folderName), folderName: folderName, dirPath: folderArray[i] };
+				lastFolderName = folderName;
+			} else if (nextParentFolderName === lastFolderName) {
+				// console.debug('Child');
+				currentParentFolder = currentParentFolder.getChildNamed(lastFolderName);
+				folderPromises.push(promiseFolderAdded(folderName));
+				currentParentFolder.createSubfolder(folderName, msgWindow);
+				// console.debug('create ' + fcount + ' :  ' + folderName);
+				fcount++;
+				await Promise.all(folderPromises);
+				nsiFolderArray[i] = { nsiFolder: currentParentFolder.getChildNamed(folderName), folderName: folderName, dirPath: folderArray[i] };
+				lastFolderName = folderName;
+			} else {
+				// console.debug('ScanNewParent '+folderName);
+				var findParentName = folderPathParts[folderPathParts.length - 2];
+				for (let p = folderPathParts.length - 2; p >= 0; p--) {
+					let previousParentFolder = currentParentFolder.parent;
+					// console.debug('PreviousParentFolder '+previousParentFolder.name);
+					// console.debug('currentParentFolder '+ currentParentFolder.name);
+					// console.debug('FolderPart ' + findParentName);
+
+					if (previousParentFolder.name === findParentName) {
+						currentParentFolder = previousParentFolder;
+						// console.debug('ParentParent ' + currentParentFolder.name);
+
+						folderPromises.push(promiseFolderAdded(folderName));
+						currentParentFolder.createSubfolder(folderName, msgWindow);
+						// console.debug('create ' + fcount + ' :  ' + folderName);
+						fcount++;
+						await Promise.all(folderPromises);
+						nsiFolderArray[i] = { nsiFolder: currentParentFolder.getChildNamed(folderName), folderName: folderName, dirPath: folderArray[i] };
+						lastFolderName = folderName;
+						// console.debug('BreaksScan');
+						break;
+					} else {
+						// console.debug('NotEqual ' + previousParentFolder.name + ' : '+ findParentName);
+						currentParentFolder = previousParentFolder;
+					}
+				}
+			}
+
+			// tempfolder2 = tempfolder2.QueryInterface(Ci.nsIMsgFolder);
+
+
+		}
+	} catch (e) {
+		console.debug(e);
+		return;
+	}
+	let endTime = new Date();
+	console.debug('Cycle: ' + ' Time End: ' + (endTime - startTime) / 1000);
+	console.debug('FoldersDone');
+	return nsiFolderArray;
+
+
+	// IETwritestatus('Cycle: ' + i2 + '  Folder: ' + folderName)
+}
+
 
 
 
@@ -1918,24 +2218,24 @@ async function createFolders(parent, cycles, fcount, mcount, msize) {
 				folderPromises.push(promiseFolderAdded(folderName));
 				parent.createSubfolder(folderName, msgWindow);
 				// console.debug('create :     ' + i + ' : ' + folderName);
-				// if (i % 50 == 0 && 0) {
+				if (i % 20 === 0) {
 				await Promise.all(folderPromises);
-				// }
+				}
 
 				// IETwritestatus('Created Folder : ' + i2 + ' :  ' + i);
 				// if (i % 100 == 0 && 0) {
-				if (i % 100 == 0) {
+				if (i % 150 == 0) {
 					// if (0) {
 					parent.ForceDBClosed();
-					await sleepA(100);
+					// await sleepA(100);
 
 					parent.updateFolder(msgWindow);
 					// await sleepA(100);
 				}
 
 
-				if (i % 1 === 0 && 0) {
-				// if (i % 1 === 0) {
+				if (i % 1 === 0 && mcount > 0) {
+					// if (i % 1 === 0) {
 					// if (i % 4000 == 0 && i !== 0) {
 					// console.debug('adding message ' + parent.name);
 					await sleepA(5);
@@ -1949,13 +2249,18 @@ async function createFolders(parent, cycles, fcount, mcount, msize) {
 					// parent.updateFolder(msgWindow);
 					// console.debug('waiting over');
 				}
-				IETwritestatus('Cycle: ' + i2 + '  Folder: ' + folderName)
+				let stepTime2 = new Date();
+				IETwritestatus('Folder Cycle: ' + i2 + '  Folder: ' + folderName + '  Time ' + stepTime2);
 			}
 		} catch (e) {
 			console.debug(e);
 			alert(e);
 			return;
 		}
+
+		let stepTime = new Date();
+		console.debug('CreateFolders ElapsedTime: ' + (stepTime - startTime) / 1000 + ' sec');
+
 		// console.debug('wait clear subfolders');
 		await sleepA(500);
 
@@ -2032,7 +2337,7 @@ var source = "From - Sat Nov  1 12:39:54 2008\n" +
  */
 // var msg1 =	"To: test@example.com\n";
 var msg1 = "From - Sat Nov  1 12:39:54 2008\n";
-msg1 += "X-Mozilla-Status: 0001\n";
+msg1 += "X-Mozilla-Status: 0000\n";
 msg1 += "X-Mozilla-Status2: 00000000\n";
 
 msg1 += "To: test@example.com\n";
