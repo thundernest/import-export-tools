@@ -1081,6 +1081,7 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 									.createInstance(Ci.nsIScriptableUnicodeConverter);
 								converter.charset = "UTF-8";
 								attName = converter.ConvertFromUnicode(att.name);
+								console.debug('attachment name '+attName);
 								var attDirContainerClone = attDirContainer.clone();
 								// var attNameAscii = attName.replace(/[^a-zA-Z0-9\-\.]/g,"_");
 								attNameAscii = encodeURIComponent(att.name);
@@ -1203,6 +1204,8 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 			} else {
 				if (saveAttachments) {
 					// Save embedded images
+					console.debug('save embedded images');
+					console.debug(data);
 					try {
 						var embImgContainer = null;
 						var isWin = (navigator.platform.toLowerCase().indexOf("win") > -1);
@@ -1213,9 +1216,13 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 						// cleidigh - TB68 groupbox needs hbox/label
 						var imgs;
 						if (versionChecker.compare(currentVersion, "60.8") >= 0) {
+							console.debug('search mailbox ');
 							imgs = data.match(/<IMG[^>]+SRC=\"mailbox[^>]+>/gi);
+							console.debug('# embedded ' + imgs.length);
 						} else {
+							console.debug('search IMAP');
 							imgs = data.match(/<IMG[^>]+SRC=\"imap[^>]+>/gi);
+							console.debug('# embedded ' + imgs.length);
 						}
 
 						for (var i = 0; i < imgs.length; i++) {
@@ -1225,18 +1232,24 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 								embImgContainer.createUnique(1, 0775);
 							}
 
+							console.debug('get URL ' + i + '  ' + imgs[i]);
 							var aUrl;
 							if (versionChecker.compare(currentVersion, "60.8") >= 0) {
 								aUrl = imgs[i].match(/mailbox:\/\/\/[^\"]+/);
+								console.debug('mailbox URL ' + i + '  ' + aUrl);
 							} else {
 								aUrl = imgs[i].match(/imap:\/\/[^\"]+/);
+								console.debug('IMAP URL ' + i + '  ' + aUrl);
 							}
 
 							var embImg = embImgContainer.clone();
 							embImg.append(i + ".jpg");
+							console.debug('Save embedded as: ' + embImg.path);
 							messenger.saveAttachmentToFile(embImg, aUrl, uri, "image/jpeg", null);
 							// var sep = isWin ? "\\" : "/";
 							data = data.replace(aUrl, embImgContainer.leafName + "/" + i + ".jpg");
+							console.debug('Data after img source substitution ');
+							console.debug(data);
 						}
 					} catch (e) {
 						IETlogger.write("save embedded images - error = " + e);

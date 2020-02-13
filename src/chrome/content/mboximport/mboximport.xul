@@ -13,6 +13,7 @@
 			<menupopup id="mbxpopup" onpopupshowing="IETsetMBmenu();">
 				<menuitem id="mboxexport_test" label="CreateFolders-Msgs" oncommand="importTest1();" />
 				<menuitem id="mboxexport_test2" label="File Read-Add Test2" oncommand="importTest2();" />
+				<menuitem id="mboxexport_test2" label="Import Test3" oncommand="importTest3();" />
 				<menuitem id="mboxexport_test3" label="Experimental EML Import Test1" oncommand="importEMLExperiment1();" />
 				<menuitem id="mboxexport" label="" oncommand="exportfolder(false,false,true,false);" />
 				<menuitem id="mboxexportZIP" label="&exportZIP;" oncommand="exportfolder(false,false,true,true);" />
