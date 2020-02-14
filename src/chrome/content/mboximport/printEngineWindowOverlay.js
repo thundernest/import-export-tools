@@ -56,7 +56,16 @@ var IETprintPDFengine = {
 			var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
 				.getService(Ci.nsIPrintSettingsService);
 			var myPrintSettings = PSSVC.newPrintSettings;
-			myPrintSettings.printSilent = true;
+			// cleidigh 'get global settings'
+			var myPrintSettings2 = PSSVC.globalPrintSettings;
+			console.debug('New Left-hander ' + myPrintSettings.headerStrLeft);
+			console.debug('global Left-hander ' + myPrintSettings2.headerStrLeft);
+			myPrintSettings.headerStrLeft = "testLeft-hander";
+
+			// PSSVC.initPrintSettingsFromPrefs(myPrintSettings, false, 2);
+
+			myPrintSettings.printSilent = false;
+
 			myPrintSettings.toFileName = opener.IETprintPDFmain.filePath;
 			myPrintSettings.printToFile = true;
 			var fileFormat = IETprintPDFengine.prefs.getIntPref("extensions.importexporttoolsng.printPDF.fileFormat");

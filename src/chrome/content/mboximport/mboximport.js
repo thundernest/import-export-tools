@@ -93,6 +93,17 @@ var IETprintPDFmain = {
 			}
 		} catch (e) { }
 
+		// cleidigh PDF settings test
+			var myPrintSettings = printSvc.newPrintSettings;
+			// cleidigh 'get global settings'
+			var myPrintSettings2 = printSvc.globalPrintSettings;
+			var myPrintSettings3;
+			// printSvc.initPrintSettingsFromPrefs(myPrintSettings3, )
+			console.debug('New Left-hander ' + myPrintSettings.headerStrLeft);
+			console.debug('global Left-hander ' + myPrintSettings2.headerStrLeft);
+			// myPrintSettings.headerStrLeft = myPrintSettings2.headerStrLeft;
+
+
 		var msgFolders = GetSelectedMsgFolders();
 		var msgs;
 
