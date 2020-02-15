@@ -55,14 +55,22 @@ var IETprintPDFengine = {
 			InitPrintEngineWindow();
 			var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
 				.getService(Ci.nsIPrintSettingsService);
-			var myPrintSettings = PSSVC.newPrintSettings;
+
+			// cleidigh test to use global printing preferences
+
+			// var myPrintSettings = PSSVC.newPrintSettings;
 			// cleidigh 'get global settings'
-			var myPrintSettings2 = PSSVC.globalPrintSettings;
+			var myPrintSettings = PSSVC.globalPrintSettings;
+			myPrintSettings.printerName = PSSVC.defaultPrinterName;
+
 			console.debug('New Left-hander ' + myPrintSettings.headerStrLeft);
-			console.debug('global Left-hander ' + myPrintSettings2.headerStrLeft);
-			myPrintSettings.headerStrLeft = "testLeft-hander";
+			// console.debug('global Left-hander ' + myPrintSettings2.headerStrLeft);
+			// myPrintSettings.headerStrLeft = "testLeft-hander";
 
 			// PSSVC.initPrintSettingsFromPrefs(myPrintSettings, false, 2);
+			PSSVC.initPrintSettingsFromPrinter(myPrintSettings.printerName, myPrintSettings);
+			PSSVC.initPrintSettingsFromPrefs(myPrintSettings, true, myPrintSettings.kInitSaveAll);
+			console.debug('New Left-hander ' + myPrintSettings.headerStrLeft);
 
 			myPrintSettings.printSilent = false;
 

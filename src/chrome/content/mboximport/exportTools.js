@@ -1215,18 +1215,27 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 
 						// cleidigh - TB68 groupbox needs hbox/label
 						var imgs;
-						if (versionChecker.compare(currentVersion, "60.8") >= 0) {
+						// if (versionChecker.compare(currentVersion, "60.8") >= 0) {
+							
 							console.debug('search mailbox & imap');
 							imgs = data.match(/<IMG[^>]+SRC=\"mailbox[^>]+>/gi);
-
-							imgs = imgs.concat(imgs, data.match(/<IMG[^>]+SRC=\"imap[^>]+>/gi));
-
+							if (imgs === null) {
+								imgs = [];
+							}
+							console.debug('mailbox images: ' +imgs.length);
+							var imgsImap = data.match(/<IMG[^>]+SRC=\"imap[^>]+>/gi);
+							if (imgsImap !== null) {
+								console.debug('IMAP images: ' +imgsImap.length);
+								imgs = imgs.concat(imgsImap);
+							}
+							
 							console.debug('# embedded ' + imgs.length);
-						} else {
-							console.debug('search IMAP');
-							imgs = data.match(/<IMG[^>]+SRC=\"imap[^>]+>/gi);
-							console.debug('# embedded ' + imgs.length);
-						}
+						
+						// } else {
+						// 	console.debug('search IMAP');
+						// 	imgs = data.match(/<IMG[^>]+SRC=\"imap[^>]+>/gi);
+						// 	console.debug('# embedded ' + imgs.length);
+						// }
 
 						for (var i = 0; i < imgs.length; i++) {
 							if (!embImgContainer) {
@@ -1238,17 +1247,20 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 							console.debug('get URL ' + i + '  ' + imgs[i]);
 							var aUrl;
 							
-							if (versionChecker.compare(currentVersion, "60.8") >= 0) {
+							// if (versionChecker.compare(currentVersion, "60.8") >= 0) {
 								aUrl = imgs[i].match(/mailbox:\/\/\/[^\"]+/);
-								if (aUrl.length === 0) {
+								if (aUrl === null) {
 									aUrl = imgs[i].match(/imap:\/\/[^\"]+/);
 								}
 
+								if (aUrl === null) {
+									continue;
+								}
 								console.debug('mailbox URL ' + i + '  ' + aUrl);
-							} else {
-								aUrl = imgs[i].match(/imap:\/\/[^\"]+/);
-								console.debug('IMAP URL ' + i + '  ' + aUrl);
-							}
+							// } else {
+							// 	aUrl = imgs[i].match(/imap:\/\/[^\"]+/);
+							// 	console.debug('IMAP URL ' + i + '  ' + aUrl);
+							// }
 
 							var embImg = embImgContainer.clone();
 							embImg.append(i + ".jpg");
