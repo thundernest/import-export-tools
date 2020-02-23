@@ -50,7 +50,7 @@ IETlogger,
 IETcopyStrToClip,
 MsgHdrToMimeMessage,
 findGoodFolderName,
-
+IETgetComplexPref
 */
 
 /* eslint complexity: [0,30] */
@@ -77,6 +77,7 @@ var IETglobalFile;
 var IETabort;
 
 var { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
+var { strftime } = ChromeUtils.import("chrome://mboximport/content/modules/strftime.js");
 
 if (String.prototype.trim) {
 	ChromeUtils.import("resource:///modules/gloda/mimemsg.js");
@@ -1060,9 +1061,14 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 							// cleidigh
 
 							var dateInSec = hdr.dateInSeconds;
-							var msgDate8601string = dateInSecondsTo8601(dateInSec);
-							console.debug(msgDate8601string);
-							attDirContainer.append("Attachments-" + msgDate8601string);
+							var customDateFormat = IETgetComplexPref("extensions.importexporttoolsng.export.filename_date_custom_format");
+							var customDateString = strftime.strftime(customDateFormat, new Date(dateInSec * 1000));
+
+							if (IETprefs.getBoolPref("attachment_dir_add_date_custom_format")) {
+								attDirContainer.append("Attachments-" + customDateString);
+							} else {
+								attDirContainer.append("Attachments");
+							}
 
 							// attDirContainer.append("Attachments");
 							attDirContainer.createUnique(1, 0775);

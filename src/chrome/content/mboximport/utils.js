@@ -221,7 +221,8 @@ function getSubjectForHdr(hdr, dirPath) {
 	if (mustcorrectname)
 		fname = nametoascii(fname);
 	else
-		fname = fname.replace(/[\/\\:,<>*\?\"\|\']/g, "_");
+		// fname = fname.replace(/[\/\\:,<>*\?\"\|\']/g, "_");
+		fname = fname.replace(/[\/\\:,<>*\"\|\']/g, "_");
 
 	if (cutFileName) {
 		var maxFN = 249 - dirPath.length;
