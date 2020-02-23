@@ -1057,7 +1057,14 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 						//	continue;
 						if (noDir) {
 							var attDirContainer = file.clone();
-							attDirContainer.append("Attachments");
+							// cleidigh
+
+							var dateInSec = hdr.dateInSeconds;
+							var msgDate8601string = dateInSecondsTo8601(dateInSec);
+							console.debug(msgDate8601string);
+							attDirContainer.append("Attachments-" + msgDate8601string);
+
+							// attDirContainer.append("Attachments");
 							attDirContainer.createUnique(1, 0775);
 							footer = '<br><hr><br><div style="font-size:12px;color:black;"><img src="data:image/gif;base64,R0lGODdhDwAPAOMAAP///zEwYmJlzQAAAPr6+vv7+/7+/vb29pyZ//39/YOBg////////////////////ywAAAAADwAPAAAESRDISUG4lQYr+s5bIEwDUWictA2GdBjhaAGDrKZzjYq3PgUw2co24+VGLYAAAesRLQklxoeiUDUI0qSj6EoH4Iuoq6B0PQJyJQIAOw==">\r\n<ul>';
 							noDir = false;

@@ -43,6 +43,9 @@
 							<checkbox id="MBhtmlasdisplayed" label="&MBlabel4;" />
 						</hbox>
 						<hbox align="center">
+							<checkbox id="addCustomDateToAttachments" label="Add custom date to attachment directories" />
+						</hbox>
+						<hbox align="center">
 							<checkbox id="MBcliptextplain" label="&MBlabel5;" />
 						</hbox>
 						<hbox align="center">

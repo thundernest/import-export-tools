@@ -160,7 +160,7 @@ function getSubjectForHdr(hdr, dirPath) {
 		pattern = pattern.replace("%s", subj);
 		pattern = pattern.replace("%k", key);
 		pattern = pattern.replace("%d", msgDate8601string);
-		pattern = pattern.replace("%D", strftime.strftime(customDateFormat));
+		pattern = pattern.replace("%D", strftime.strftime(customDateFormat, new Date(dateInSec * 1000)));
 		pattern = pattern.replace("%n", smartName);
 		pattern = pattern.replace("%a", authName);
 		pattern = pattern.replace("%r", recName);
@@ -211,8 +211,8 @@ function getSubjectForHdr(hdr, dirPath) {
 		extendedFilenameFormat = extendedFilenameFormat.replace("${index}", index);
 		extendedFilenameFormat = extendedFilenameFormat.replace("${prefix}", prefix);
 		extendedFilenameFormat = extendedFilenameFormat.replace("${suffix}", suffix);
-		extendedFilenameFormat = extendedFilenameFormat.replace("${dateCustom}", strftime.strftime(customDateFormat));
-		extendedFilenameFormat = extendedFilenameFormat.replace("${date}", strftime.strftime("%Y%m%d"));
+		extendedFilenameFormat = extendedFilenameFormat.replace("${dateCustom}", strftime.strftime(customDateFormat, new Date(dateInSec * 1000)));
+		extendedFilenameFormat = extendedFilenameFormat.replace("${date}", strftime.strftime("%Y%m%d", new Date(dateInSec * 1000)));
 		fname = extendedFilenameFormat;
 	} else {
 		fname = msgDate8601string + "-" + subj + "-" + hdr.messageKey;
