@@ -18,11 +18,12 @@
 		title="ImportExportTools NG">
 	<tabbox>
 		<tabs>
-			<tab label="&misc;"  />
+			<tab label="&misc;" selected="true" />
 			<tab label="&filenameFormat;" />
 			<tab label="&savedirs;" />
 			<tab label="&backupTab;" />
-			<tab label="Tests" selected="true" />
+			<!-- <tab label="Tests" selected="true" /> -->
+			<tab label="Tests" />
 		</tabs>
 		<tabpanels>
 			<tabpanel>
@@ -115,6 +116,8 @@
 								<menupopup id="part1-popup-list">
 									<menuitem id="m0" label="&subject;" value="%s" />
 									<menuitem label="&date;" value="%d" />
+									<!-- <menuitem label="Date (and Time)" value="%t" /> -->
+									<menuitem label="Date (Custom)" value="%D" />
 									<menuitem label="&key;" value="%k" />
 									<menuitem label="&name; (&sender;/&recipient;)" value="%n" />
 									<menuitem label="&name; (&sender;)" value="%a" />
@@ -126,8 +129,8 @@
 								<menupopup id="part2-popup-list">
 									<menuitem label="&subject;" value="%s" />
 									<menuitem label="&date;" value="%d" selected="true" />
-									<menuitem label="Date+Time" value="%d" />
-									<menuitem label="Date (Custom)" value="%d" />
+									<!-- <menuitem label="Date (and Time)" value="%t" /> -->
+									<menuitem label="Date (Custom)" value="%D" />
 									<menuitem label="&key;" value="%k" />
 									<menuitem label="&name; (&sender;/&recipient;)" value="%n" />
 									<menuitem label="&name; (&sender;)" value="%a" />
@@ -140,6 +143,9 @@
 								<menupopup id="part3-popup-list">
 									<menuitem label="&subject;" value="%s" />
 									<menuitem label="&date;" value="%d" />
+									<!-- <menuitem label="Date (and Time)" value="%t" /> -->
+									<menuitem label="Date (Custom)" value="%D" />
+									
 									<menuitem label="&key;" value="%k" selected="true" />
 									<menuitem label="&name; (&sender;/&recipient;)" value="%n" />
 									<menuitem label="&name; (&sender;)" value="%a" />
@@ -149,32 +155,36 @@
 							</menulist>
 						</hbox>
 						<spacer height="6px" />
-						<!-- 							<hbox align="center"><checkbox id="addtimeCheckbox" label="&addtime.label;" checked="false" /></hbox>
- -->
+						<hbox align="center" style="display: none;"><checkbox id="addtimeCheckbox" label="&addtime.label;" checked="false" /></hbox>
+
 						<hbox align="center">
 							<hbox>
 								<checkbox id="addPrefix" label="&addPrefix;" checked="false" />
 								<textbox id="prefixText" />
-								<checkbox id="addPrefix" label="Add Suffix" checked="false" />
-								<textbox id="prefixText" />
+								<checkbox id="addSuffix" label="Add Suffix" checked="false" />
+								<textbox id="suffixText" />
 							</hbox>
 						</hbox>
 						<spacer height="10px" />
 						<hbox>
-							<label>Custom Date: </label>
-							<textbox id="prefixText" value="%Y-%m-%a %T"/>
+							<label id="customDateLabel" style="padding-left: 3px;" >Custom Date: </label>
+							<textbox id="customDateFormat" value="%Y-%m-%a %T" />
 						</hbox>
-						<spacer height="8px" />
-						<html:hr color="grey" width="85%"/>
+						<!-- <spacer height="8px" style="border-bottom: 1px solid #303030; padding: 10px;" /> -->
+						<!-- <html:hr color="grey" width="85%"/> -->
+						<spacer height="6px" />
+						<html:div style="height: 0.5px;  background-color: lightgrey; margin: 6px;" >
+						</html:div>
+
 						<spacer height="6px" />
 						<hbox align="center">
-							<checkbox id="customizeFilenames" label="Use Extended Format" checked="false"
-									oncommand="setTimeout(customNamesCheck,200,this);" />
+							<checkbox id="useExtendedFormat" label="Use Extended Format" checked="false"
+									oncommand="setTimeout(extendedFormatCheck,200,this);" />
 						</hbox>
 						<spacer height="6px" />
 						<hbox>
-							<label>Format: </label>
-							<textbox id="prefixText" value="{prefix}$xyz-{subject}-{dateCustom}-[foobar]-{index}-{suffix}" size="65"/>
+							<label id="extendedFormatLabel">Format: </label>
+							<textbox id="extendedFormat" value="{prefix}$xyz-{subject}-{dateCustom}-[foobar]-{index}-{suffix}" size="65"/>
 						</hbox>
 					</groupbox>
 					<groupbox>
