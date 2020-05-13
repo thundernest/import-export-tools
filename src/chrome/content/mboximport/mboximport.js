@@ -1005,9 +1005,13 @@ function importALLasEML(recursive) {
 	}
 }
 
+var fcount = 1;
+
 function RUNimportALLasEML(file, recursive) {
 	gFileEMLarray = [];
 	gFileEMLarrayIndex = 0;
+	fcount = 1;
+
 	var buildEMLarrayRet = buildEMLarray(file, null, recursive);
 	gEMLtotal = gFileEMLarray.length;
 	if (gEMLtotal < 1) {
@@ -1017,13 +1021,19 @@ function RUNimportALLasEML(file, recursive) {
 	trytoimportEML(gFileEMLarray[0].file, gFileEMLarray[0].msgFolder, false, null, true);
 }
 
+var rootFolder;
+var mcount = 0;
+
 function buildEMLarray(file, fol, recursive) {
 	// allfiles is the nsiSimpleEnumerator with the files in the directory selected from the filepicker
 	var allfiles = file.directoryEntries;
 	var msgFolder;
 
-	if (!fol)
+	if (!fol) {
 		msgFolder = GetSelectedMsgFolders()[0];
+		rootFolder = msgFolder;
+		mcount = 0;
+	}
 	else
 		msgFolder = fol;
 
@@ -1038,6 +1048,12 @@ function buildEMLarray(file, fol, recursive) {
 		}
 
 		if (recursive && is_Dir) {
+			fcount++;
+			if (fcount % 400 === 0) {
+				rootFolder.ForceDBClosed();
+				console.debug('dbClose');
+			}
+			console.debug('CreateFolder: ' + afile.leafName + '  ' + fcount);
 			msgFolder.createSubfolder(afile.leafName, msgWindow);
 			var newFolder = msgFolder.getChildNamed(afile.leafName);
 			newFolder = newFolder.QueryInterface(Ci.nsIMsgFolder);
@@ -1306,6 +1322,12 @@ function writeDataToFolder(data, msgFolder, file, removeFile) {
 	data = prologue + data + "\n";
 	// Add the email to the folder
 	msgLocalFolder.addMessage(data);
+	mcount++;
+	if (mcount % 100 === 0) {
+		rootFolder.ForceDBClosed();
+		console.debug('dbClose ' + mcount);
+	}
+
 	gEMLimported = gEMLimported + 1;
 	IETwritestatus(mboximportbundle.GetStringFromName("numEML") + gEMLimported + "/" + gEMLtotal);
 	if (removeFile)
