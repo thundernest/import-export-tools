@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "name": "__MSG_extensionName__",
-    "version": "4.1.0",
-    "description": "__MSG_extensionDescription__",
+    "version": "4.1.1-PDF-test1",
+    "description": "PDF parameters test1 - IETng",
     "author": "Christopher Leidigh",
     "xpi-name": "import-export-tools-ng",
     "applications": {

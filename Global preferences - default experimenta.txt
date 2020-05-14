@@ -1,0 +1,283 @@
+Global preferences - default experimental option
+pref("extensions.importexporttoolsng.experimental.printPDF.use_global_preferences", true);
+
+XPCWrappedNative_NoHelper { printerName: Getter & Setter, kInitSaveAll: 4294967295, printSilent: Getter & Setter, toFileName: Getter & Setter, printToFile: Getter & Setter, outputFormat: Getter & Setter, QueryInterface: QueryInterface(), SetPrintOptions: SetPrintOptions(), GetPrintOptions: GetPrintOptions(), GetPrintOptionsBits: GetPrintOptionsBits(), … }
+printEngineWindowOverlay.js:87:12
+print engine loading
+PDF Output: Use global preferences
+[xpconnect wrapped nsIPrintSettings]
+Settings:
+printerName : Microsoft Print to PDF
+kInitSaveAll : 4294967295
+printSilent : true
+toFileName : C:\Dev\Thunderbird\Extensions XUL\import-export-tools-ng-master\xpi\20200430-test PDF-1.pdf
+printToFile : true
+outputFormat : 2
+QueryInterface : function QueryInterface() {
+    [native code]
+}
+SetPrintOptions : function SetPrintOptions() {
+    [native code]
+}
+GetPrintOptions : function GetPrintOptions() {
+    [native code]
+}
+GetPrintOptionsBits : function GetPrintOptionsBits() {
+    [native code]
+}
+SetPrintOptionsBits : function SetPrintOptionsBits() {
+    [native code]
+}
+GetEffectivePageSize : function GetEffectivePageSize() {
+    [native code]
+}
+clone : function clone() {
+    [native code]
+}
+assign : function assign() {
+    [native code]
+}
+startPageRange : 1
+endPageRange : 1
+edgeTop : 0
+edgeLeft : 0
+edgeBottom : 0
+edgeRight : 0
+marginTop : 0.5
+marginLeft : 0.5
+marginBottom : 0.5
+marginRight : 0.5
+unwriteableMarginTop : 0
+unwriteableMarginLeft : 0
+unwriteableMarginBottom : 0
+unwriteableMarginRight : 0
+scaling : 1
+printBGColors : false
+printBGImages : false
+printRange : 0
+title : 
+docURL : 
+headerStrLeft : &T
+headerStrCenter : 
+headerStrRight : &U
+footerStrLeft : &PT
+footerStrCenter : 
+footerStrRight : &D
+howToEnableFrameUI : 0
+isCancelled : false
+saveOnCancel : true
+printFrameTypeUsage : 0
+printFrameType : 1
+shrinkToFit : true
+showPrintProgress : true
+paperName : 
+paperData : 1
+paperWidth : -1
+paperHeight : -1
+paperSizeUnit : 0
+printReversed : false
+printInColor : true
+orientation : 0
+numCopies : 1
+printPageDelay : 50
+resolution : 600
+duplex : 0
+isInitializedFromPrinter : true
+isInitializedFromPrefs : true
+kInitSaveOddEvenPages : 1
+kInitSaveHeaderLeft : 2
+kInitSaveHeaderCenter : 4
+kInitSaveHeaderRight : 8
+kInitSaveFooterLeft : 16
+kInitSaveFooterCenter : 32
+kInitSaveFooterRight : 64
+kInitSaveBGColors : 128
+kInitSaveBGImages : 256
+kInitSavePaperSize : 512
+kInitSaveResolution : 1024
+kInitSaveDuplex : 2048
+kInitSavePaperData : 8192
+kInitSaveUnwriteableMargins : 16384
+kInitSaveEdges : 32768
+kInitSaveReversed : 65536
+kInitSaveInColor : 131072
+kInitSaveOrientation : 262144
+kInitSavePrinterName : 1048576
+kInitSavePrintToFile : 2097152
+kInitSaveToFileName : 4194304
+kInitSavePageDelay : 8388608
+kInitSaveMargins : 16777216
+kInitSaveNativeData : 33554432
+kInitSaveShrinkToFit : 134217728
+kInitSaveScaling : 268435456
+kPrintOddPages : 1
+kPrintEvenPages : 2
+kEnableSelectionRB : 4
+kRangeAllPages : 0
+kRangeSpecifiedPageRange : 1
+kRangeSelection : 2
+kRangeFocusFrame : 3
+kJustLeft : 0
+kJustCenter : 1
+kJustRight : 2
+kUseInternalDefault : 0
+kUseSettingWhenPossible : 1
+kPaperSizeNativeData : 0
+kPaperSizeDefined : 1
+kPaperSizeInches : 0
+kPaperSizeMillimeters : 1
+kPortraitOrientation : 0
+kLandscapeOrientation : 1
+kNoFrames : 0
+kFramesAsIs : 1
+kSelectedFrame : 2
+kEachFrameSep : 3
+kFrameEnableNone : 0
+kFrameEnableAll : 1
+kFrameEnableAsIsAndEach : 2
+kOutputFormatNative : 0
+kOutputFormatPS : 1
+kOutputFormatPDF : 2
+
+
+Default preferences - change experimental option  === false With config editor
+extensions.importexporttoolsng.experimental.printPDF.use_global_preferences => false
+
+
+XPCWrappedNative_NoHelper { printSilent: Getter & Setter, toFileName: Getter & Setter, printToFile: Getter & Setter, outputFormat: Getter & Setter, QueryInterface: QueryInterface(), SetPrintOptions: SetPrintOptions(), GetPrintOptions: GetPrintOptions(), GetPrintOptionsBits: GetPrintOptionsBits(), SetPrintOptionsBits: SetPrintOptionsBits(), GetEffectivePageSize: GetEffectivePageSize(), … }
+printEngineWindowOverlay.js:87:12
+print engine loading
+PDF Output: Use default preferences
+[xpconnect wrapped nsIPrintSettings]
+Settings:
+printSilent : true
+toFileName : C:\Dev\Thunderbird\Extensions XUL\import-export-tools-ng-master\xpi\20200430-test PDF-1-1.pdf
+printToFile : true
+outputFormat : 2
+QueryInterface : function QueryInterface() {
+    [native code]
+}
+SetPrintOptions : function SetPrintOptions() {
+    [native code]
+}
+GetPrintOptions : function GetPrintOptions() {
+    [native code]
+}
+GetPrintOptionsBits : function GetPrintOptionsBits() {
+    [native code]
+}
+SetPrintOptionsBits : function SetPrintOptionsBits() {
+    [native code]
+}
+GetEffectivePageSize : function GetEffectivePageSize() {
+    [native code]
+}
+clone : function clone() {
+    [native code]
+}
+assign : function assign() {
+    [native code]
+}
+startPageRange : 1
+endPageRange : 1
+edgeTop : 0
+edgeLeft : 0
+edgeBottom : 0
+edgeRight : 0
+marginTop : 0.5
+marginLeft : 0.5
+marginBottom : 0.5
+marginRight : 0.5
+unwriteableMarginTop : 0
+unwriteableMarginLeft : 0
+unwriteableMarginBottom : 0
+unwriteableMarginRight : 0
+scaling : 1
+printBGColors : false
+printBGImages : false
+printRange : 0
+title : 
+docURL : 
+headerStrLeft : &T
+headerStrCenter : 
+headerStrRight : &U
+footerStrLeft : &PT
+footerStrCenter : 
+footerStrRight : &D
+howToEnableFrameUI : 0
+isCancelled : false
+saveOnCancel : true
+printFrameTypeUsage : 0
+printFrameType : 1
+shrinkToFit : true
+showPrintProgress : true
+paperName : 
+paperData : 0
+paperWidth : 8.5
+paperHeight : 11
+paperSizeUnit : 0
+printReversed : false
+printInColor : true
+orientation : 0
+numCopies : 1
+printerName : 
+printPageDelay : 50
+resolution : 0
+duplex : 0
+isInitializedFromPrinter : false
+isInitializedFromPrefs : false
+kInitSaveOddEvenPages : 1
+kInitSaveHeaderLeft : 2
+kInitSaveHeaderCenter : 4
+kInitSaveHeaderRight : 8
+kInitSaveFooterLeft : 16
+kInitSaveFooterCenter : 32
+kInitSaveFooterRight : 64
+kInitSaveBGColors : 128
+kInitSaveBGImages : 256
+kInitSavePaperSize : 512
+kInitSaveResolution : 1024
+kInitSaveDuplex : 2048
+kInitSavePaperData : 8192
+kInitSaveUnwriteableMargins : 16384
+kInitSaveEdges : 32768
+kInitSaveReversed : 65536
+kInitSaveInColor : 131072
+kInitSaveOrientation : 262144
+kInitSavePrinterName : 1048576
+kInitSavePrintToFile : 2097152
+kInitSaveToFileName : 4194304
+kInitSavePageDelay : 8388608
+kInitSaveMargins : 16777216
+kInitSaveNativeData : 33554432
+kInitSaveShrinkToFit : 134217728
+kInitSaveScaling : 268435456
+kInitSaveAll : 4294967295
+kPrintOddPages : 1
+kPrintEvenPages : 2
+kEnableSelectionRB : 4
+kRangeAllPages : 0
+kRangeSpecifiedPageRange : 1
+kRangeSelection : 2
+kRangeFocusFrame : 3
+kJustLeft : 0
+kJustCenter : 1
+kJustRight : 2
+kUseInternalDefault : 0
+kUseSettingWhenPossible : 1
+kPaperSizeNativeData : 0
+kPaperSizeDefined : 1
+kPaperSizeInches : 0
+kPaperSizeMillimeters : 1
+kPortraitOrientation : 0
+kLandscapeOrientation : 1
+kNoFrames : 0
+kFramesAsIs : 1
+kSelectedFrame : 2
+kEachFrameSep : 3
+kFrameEnableNone : 0
+kFrameEnableAll : 1
+kFrameEnableAsIsAndEach : 2
+kOutputFormatNative : 0
+kOutputFormatPS : 1
+kOutputFormatPDF : 2
