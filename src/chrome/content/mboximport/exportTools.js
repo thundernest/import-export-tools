@@ -1926,14 +1926,28 @@ var copyHeaders = {
 
 };
 
-function IETescapeBeginningFrom(data) {
+function IETescapeBeginningFrom(data, file) {
 	// Workaround to fix the "From " in beginning line problem in body messages
 	// See https://bugzilla.mozilla.org/show_bug.cgi?id=119441 and
 	// https://bugzilla.mozilla.org/show_bug.cgi?id=194382
 	// TB2 has uncorrect beahviour with html messages
 	// This is not very fine, but I didnt' find anything better...
-	var datacorrected = data.replace(/\nFrom /g, "\n From ");
-	return datacorrected;
+
+	const regex = /\nFrom /g;
+	const matches = data.matchAll(regex);
+	if (regex.test(data)) {
+		console.debug('IETng-From-test From Found:' + file);
+	}
+	for (const match of matches) {
+		console.log(match.index);
+	}
+
+	if (IETprefs.getBoolPref("extensions.importexporttoolsng.experimental.test_escape_from")) {
+		console.debug('Beginning From escape:');
+		var datacorrected = data.replace(/\nFrom /g, "\n From ");
+		return datacorrected;
+	}
+	return data;
 }
 
 function IETstoreHeaders(msg, msguri, subfile, addBody) {
