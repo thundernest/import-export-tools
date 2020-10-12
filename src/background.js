@@ -36,6 +36,9 @@ messenger.WindowListener.registerChromeUrl([
 
 ]);
 
+// messenger.WindowListener.registerShutdownScript("chrome://mboximport/content/mboximport/wlshutdown.js")
+
+
 messenger.WindowListener.registerOptionsPage("chrome://mboximport/content/mboximport/mboximportOptions.xhtml");
 
 // Register each overlay script Which controls subsequent fragment loading
@@ -70,9 +73,9 @@ messenger.WindowListener.registerWindow(
 	"chrome://mboximport/content/mboximport/messageWindowOL.js");
 
 
-messenger.WindowListener.registerWindow(
-	"chrome://messenger/content/messageWindow.xhtml",
-	"chrome://mboximport/content/mboximport/messageWindowOL.js");
+// messenger.WindowListener.registerWindow(
+// 	"chrome://messenger/content/messageWindow.xhtml",
+// 	"chrome://mboximport/content/mboximport/messageWindowOL.js");
 
 // messenger.WindowListener.registerWindow(
 // 	"chrome://mboximport/content/mboximport/pest.xhtml",

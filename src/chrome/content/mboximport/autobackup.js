@@ -97,6 +97,7 @@ var autoBackup = {
 	},
 
 	start: function () {
+		console.debug('b start');
 		// "dir" is the target directory for the backup
 		var dir = autoBackup.getDir();
 		if (!dir)
@@ -319,5 +320,6 @@ document.addEventListener("dialogaccept", function (event) {
 // });
 
 window.addEventListener("load", function (event) {
+	console.debug('windowless net');
 	autoBackup.load();
 });

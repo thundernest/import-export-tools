@@ -62,6 +62,7 @@ var nosub = mboximportbundle.GetStringFromName("nosubjectmsg");
 var mboximportbundle2 = MBstrBundleService.createBundle("chrome://messenger/locale/mime.properties");
 
 var gEMLimported;
+var gEMLimportedErrs;
 var gEMLtotal;
 var gFileEMLarray;
 var gFileEMLarrayIndex;
@@ -208,7 +209,7 @@ var IETprintPDFmain = {
 function openProfileImportWizard() {
 	var quit = {};
 	window.openDialog("chrome://mboximport/content/mboximport/profileImportWizard.xhtml", "", "dialog,chrome,modal,centerscreen", quit);
-	
+
 	var appStartup = Cc["@mozilla.org/toolkit/app-startup;1"]
 		.getService(Ci.nsIAppStartup);
 	if (quit.value)
@@ -217,7 +218,7 @@ function openProfileImportWizard() {
 		}, 1000);
 
 
-	}
+}
 
 function openMboxDialog() {
 	if (IETstoreFormat() !== 0) {
@@ -1026,6 +1027,7 @@ function importALLasEML(recursive) {
 	else
 		res = IETopenFPsync(fp);
 	gEMLimported = 0;
+	gEMLimportedErrs = 0;
 	gImporting = true;
 	IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
 	if (document.getElementById("IETabortIcon")) {
@@ -1045,7 +1047,7 @@ function RUNimportALLasEML(file, recursive) {
 	gFileEMLarray = [];
 	gFileEMLarrayIndex = 0;
 	folderCount = 1;
-	
+
 	var buildEMLarrayRet = buildEMLarray(file, null, recursive);
 	gEMLtotal = gFileEMLarray.length;
 	// console.debug('buildEMLarray done ' + gEMLtotal);
@@ -1071,8 +1073,8 @@ function buildEMLarray(file, fol, recursive) {
 	} else
 		msgFolder = fol;
 
-	// console.debug('Build EML array');
-	// console.debug(' folder ' + msgFolder.name);
+	console.debug('Build EML array');
+	console.debug(' folder ' + msgFolder.name);
 
 	while (allfiles.hasMoreElements()) {
 		document.getElementById("IETabortIcon").collapsed = false;
@@ -1082,6 +1084,7 @@ function buildEMLarray(file, fol, recursive) {
 			// https://bugzilla.mozilla.org/show_bug.cgi?id=701721 ?
 			var is_Dir = afile.isDirectory();
 		} catch (e) {
+			console.debug(e);
 			continue;
 		}
 
@@ -1102,10 +1105,16 @@ function buildEMLarray(file, fol, recursive) {
 		} else {
 			var emlObj = {};
 			var afilename = afile.leafName;
+			var af = afilename;
 			afilename = afilename.toLowerCase();
 			var afilenameext = afilename.substring(afilename.lastIndexOf("."), afilename.length);
-			if (!afile.isFile() || (afilenameext !== ".eml" && afilenameext !== ".nws"))
+			if (!afile.isFile() || (afilenameext !== ".eml" && afilenameext !== ".nws")) {
+				console.debug('skip ' + afilename);
 				continue;
+			} else {
+				let c = gFileEMLarrayIndex + 1;
+				// console.debug('' + af + '  ' + c);
+			}
 			emlObj.file = afile;
 			emlObj.msgFolder = msgFolder;
 			gFileEMLarray[gFileEMLarrayIndex] = emlObj;
@@ -1117,6 +1126,7 @@ function buildEMLarray(file, fol, recursive) {
 }
 
 function importEMLs() {
+	console.debug('importEMLs');
 	var msgFolder = GetSelectedMsgFolders()[0];
 	// No import for imap and news account, sorry...
 	if ((!String.prototype.trim && msgFolder.server.type === "imap") || msgFolder.server.type === "nntp") {
@@ -1145,6 +1155,8 @@ function importEMLs() {
 			fileArray.push(onefile);
 		}
 		gEMLimported = 0;
+		gEMLimportedErrs = 0;
+		gImporting = true;
 		gEMLtotal = fileArray.length;
 		IETwritestatus(mboximportbundle.GetStringFromName("importEMLstart"));
 		var dir = fileArray[0].parent;
@@ -1281,7 +1293,11 @@ function trytoimportEML(file, msgFolder, removeFile, fileArray, allEML) {
 		cs.CopyFileMessage(file, msgFolder, null, false, 1, "", importEMLlistener, msgWindow);
 		if (!removeFile) {
 			gEMLimported = gEMLimported + 1;
-			IETwritestatus(mboximportbundle.GetStringFromName("numEML") + gEMLimported + "/" + gEMLtotal);
+			let errs = "";
+			if (gEMLimportedErrs) {
+				errs = `(Errs: ${gEMLimportedErrs})`;
+			}
+			IETwritestatus(mboximportbundle.GetStringFromName("numEML") + gEMLimported + errs + "/" + gEMLtotal);
 		}
 	} else {
 		importEMLlistener.imap = false;
@@ -1319,7 +1335,7 @@ function writeDataToFolder(data, msgFolder, file, removeFile) {
 
 	if (!gImporting) {
 		rootFolder.ForceDBClosed();
-		alert('Abort importing message # ' + gEMLimported + '\r\n\n' + e);
+		console.debug('Abort importing message # ' + gEMLimported + '\r\n\n');
 		return -1;
 	}
 	var msgLocalFolder = msgFolder.QueryInterface(Ci.nsIMsgLocalMailFolder);
@@ -1338,6 +1354,15 @@ function writeDataToFolder(data, msgFolder, file, removeFile) {
 
 	var top = data.substring(0, 2000);
 
+	// console.debug('Firstline ' + data.substring(0, 50));
+	// let fl = top.match(/^[.+]:.+$/);
+	let lines = top.split('\n');
+	// let fl = top.match(/: /);
+	if (!lines[0].includes(": ") && !lines[0].includes("From: ") && !lines[0].includes("From ")) {
+		console.debug(`Msg #: ${++gEMLimported} Err #: ${++gEMLimportedErrs}\n Folder: ${msgFolder.name}\n Filename: ${file.path}\n FirstLine ${lines[0]}\n`);
+		// console.debug('fl: ' + lines[0]);
+		return 0;
+	}
 	// Fix for crazy format returned by Hotmail view-source
 	if (top.match(/X-Message-Delivery:.+\r?\n\r?\n/) || top.match(/X-Message-Info:.+\r?\n\r?\n/))
 		data = data.replace(/(\r?\n\r?\n)/g, "\n");
@@ -1349,7 +1374,7 @@ function writeDataToFolder(data, msgFolder, file, removeFile) {
 		data = data.replace("X-OriginalArrivalTime:", "Date:");
 
 	// Some eml files begin with "From <something>"
-	// This causes that Thunderbird will not handle properly the message
+	// This causes that Thunderbird will not handl   e properly the message
 	// so in this case the first line is deleted
 	data = data.replace(/^From\s+.+\r?\n/, "");
 
@@ -1382,21 +1407,25 @@ function writeDataToFolder(data, msgFolder, file, removeFile) {
 
 	} catch (e) {
 		gImporting = false;
-		console.debug('Exception # ' + e + ' ' + gEMLimported );
+		console.debug('Exception # ' + e + ' ' + gEMLimported);
 		console.debug(msgLocalFolder.filePath.path);
 		rootFolder.ForceDBClosed();
 		alert('Exception importing message # ' + gEMLimported + '\r\n\n' + e);
 		return -1;
 	}
-	
+
 	// cleidigh force files closed
 	if (gEMLimported % 450 === 0) {
 		rootFolder.ForceDBClosed();
 		// console.debug('message DB ' + gEMLimported);
 	}
 
-	IETwritestatus(mboximportbundle.GetStringFromName("numEML") + gEMLimported + "/" + gEMLtotal);
-	
+	let errs = "";
+	if (gEMLimportedErrs) {
+		errs = ` (Errs: ${gEMLimportedErrs})`;
+	}
+	IETwritestatus(mboximportbundle.GetStringFromName("numEML") + gEMLimported + errs + "/" + gEMLtotal);
+
 	if (removeFile)
 		file.remove(false);
 	return 0;

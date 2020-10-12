@@ -278,5 +278,6 @@ window.setupHotKeys('messenger');
 }
 
 function onUnload() {
+	console.debug('messenger unmoved');
 	window.IETmessOverlayInit();
 }

@@ -28,10 +28,14 @@
 
 var { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
 
-function IETmessOverlayInit() {
+async function IETmessOverlayInit() {
+	// alert("Starting backup");
 	Services.console.logStringMessage("Start overland");
-	var last = IETprefs.getIntPref("extensions.importexporttoolsng.autobackup.last");
-	var frequency = IETprefs.getIntPref("extensions.importexporttoolsng.autobackup.frequency");
+	var w = Cc["@mozilla.org/appshell/window-mediator;1"]
+		.getService(Ci.nsIWindowMediator)
+		.getMostRecentWindow("mail:3pane");
+	var last = w.IETprefs.getIntPref("extensions.importexporttoolsng.autobackup.last");
+	var frequency = w.IETprefs.getIntPref("extensions.importexporttoolsng.autobackup.frequency");
 	if (frequency === 0)
 		return;
 	
@@ -52,37 +56,27 @@ function IETmessOverlayInit() {
 
 	var WM = Cc['@mozilla.org/appshell/window-mediator;1']
 		.getService(Ci.nsIWindowMediator);
-	var os = navigator.platform.toLowerCase();
-	console.debug('OS ' + os);
+	// var os = navigator.platform.toLowerCase();
+	// let { os } = await messenger.runtime.getPlatformInfo();
+	let os = "";
 	var wins;
 	if (os.includes("mac"))
 		wins = WM.getEnumerator(null);
 	else
 		wins = WM.getEnumerator("mail:3pane");
 	if (!wins.hasMoreElements()) {
-		if (IETprefs.getBoolPref("extensions.importexporttoolsng.autobackup.use_modal_dialog"))
-			window.openDialog("chrome://mboximport/content/mboximport/autobackup.xhtml", "", "chrome,centerscreen,modal", last, time, now);
+		if (w.IETprefs.getBoolPref("extensions.importexporttoolsng.autobackup.use_modal_dialog"))
+			w.openDialog("chrome://mboximport/content/mboximport/autobackup.xhtml", "", "chrome,centerscreen,modal", last, time, now);
 		else
-			window.openDialog("chrome://mboximport/content/mboximport/autobackup.xhtml", "", "chrome,centerscreen", last, time, now);
+			w.openDialog("chrome://mboximport/content/mboximport/autobackup.xhtml", "", "chrome,centerscreen", last, time, now);
 	}
-	window.openDialog("chrome://mboximport/content/mboximport/autobackup.xhtml", "", "chrome,centerscreen,modal", last, time, now);
-	console.debug('BackupDone');
+
+	w.openDialog("chrome://mboximport/content/mboximport/autobackup.xhtml", "", "chrome,centerscreen,modal", last, time, now);
+	console.debug(w);
+	console.debug('still the finished ');
 }
 
-function keyEvent(e) {
-	console.debug(`Key event: ${e.code}  `);
-	// console.debug(`${e.target.outerHTML}`);
-
-	// var d = document.body.outerHTML();
-	// console.debug(d.substring(0,100));
-
-	d = e.target.outerHTML;
-	console.debug(d.substring(0,100));
-}
-
-// setup hotkeys for the main window
-setupHotKeys("messenger");
-setupHotKeysObserver();
+// IETmessOverlayInit();
 
 // window.addEventListener("unload", IETmessOverlayInit, false);
 // window.addEventListener("keydown", keyEvent, false);

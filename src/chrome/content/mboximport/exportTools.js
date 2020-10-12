@@ -1043,10 +1043,22 @@ function createIndexCSV(type, file2, hdrArray, msgFolder, addBody) {
 
 		var body = addBody ? hdrs[7] : "";
 
+		var customDateFormat = IETgetComplexPref("extensions.importexporttoolsng.export.index_date_custom_format");
+		var msgDate = new Date(time / 1000);
+		var csvDate;
 
+		if (customDateFormat === "") {
+			csvDate = msgDate.toLocaleDateString() + " " + objHour + ":" + objMin;
+			console.debug('DefaultDate ' + csvDate);
+		} else {
+			csvDate = strftime.strftime(customDateFormat, msgDate);
+			console.debug(' customDate ' + csvDate);
+		}
+
+		// (strftime.strftime("%n/%d/%Y", new Date(time/1000)) + " " + objHour + ":" + objMin)
 		var record = '"' + subj.replace(/\"/g, '""') + '"' + sep + '"'
 			+ auth.replace(/\"/g, '""') + '"' + sep + '"' + recc.replace(/\"/g, '""') +
-			'"' + sep + (strftime.strftime("%n/%d/%Y", new Date(time/1000)) + " " + objHour + ":" + objMin) + sep + hasAtt + sep + body + "\r\n";
+			'"' + sep + csvDate + sep + hasAtt + sep + body + "\r\n";
 		data = data + record;
 	}
 	if (document.getElementById("IETabortIcon") && addBody)
@@ -1312,13 +1324,24 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 							}
 						} else {
 							try {
-								let decoder = new TextDecoder('utf-8');
-								attName = decoder.decode(new TextEncoder().encode(att.name));
 
-								var attDirContainerClone = attDirContainer.clone();
-								attNameAscii = encodeURIComponent(att.name);
-								attDirContainerClone.append(att.name);
-								let exitCode = messenger.saveAttachmentToFile(attDirContainerClone, att.url, uri, att.contentType, null);
+									var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
+										.createInstance(Ci.nsIScriptableUnicodeConverter);
+									converter.charset = "UTF-8";
+									attName = converter.ConvertFromUnicode(att.name);
+									var attDirContainerClone = attDirContainer.clone();
+									// var attNameAscii = attName.replace(/[^a-zA-Z0-9\-\.]/g,"_");
+									attNameAscii = encodeURIComponent(att.name);
+									attDirContainerClone.append(att.name);
+									messenger.saveAttachmentToFile(attDirContainerClone, att.url, uri, att.contentType, null);
+								
+								// let decoder = new TextDecoder('utf-8');
+								// attName = decoder.decode(new TextEncoder().encode(att.name));
+
+								// var attDirContainerClone = attDirContainer.clone();
+								// attNameAscii = encodeURIComponent(att.name);
+								// attDirContainerClone.append(att.name);
+								// let exitCode = messenger.saveAttachmentToFile(attDirContainerClone, att.url, uri, att.contentType, null);
 							} catch (e) {
 								success = false;
 								console.debug('save attachment exception ' + att.name);
@@ -1635,9 +1658,14 @@ function exportAsHtml(uri, uriArray, file, convertToText, allMsgs, copyToClip, a
 function IETconvertToUTF8(string) {
 	try {
 		// cleidigh - check if this is appropriate replacement for scriptableconverter
-		var stringUTF8 = new TextEncoder().encode(string);
-		stringUTF8 = String.fromCharCode(...stringUTF8);
-		return stringUTF8;
+
+		var converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+		converter.charset = "UTF-8";
+			var stringUTF8 = converter.ConvertToUnicode(string);
+			return stringUTF8;
+		// var stringUTF8 = new TextEncoder().encode(string);
+		// stringUTF8 = String.fromCharCode(...stringUTF8);
+		// return stringUTF8;
 	} catch (e) {
 		return string;
 	}
@@ -1812,6 +1840,9 @@ function IETwritestatus(text) {
 		document.getElementById("statusText").setAttribute("label", text);
 		document.getElementById("statusText").setAttribute("value", text);
 		var delay = IETprefs.getIntPref("extensions.importexporttoolsng.delay.clean_statusbar");
+		if (text.includes("Err")) {
+			delay = 15000;
+		}
 		if (delay > 0)
 			window.setTimeout(function () { IETdeletestatus(text); }, delay);
 	}
